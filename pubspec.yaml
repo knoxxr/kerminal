@@ -97,6 +97,8 @@ msix_config:
   msix_version: 0.1.0.0
   logo_path: assets/icon/app_icon.png
   capabilities: "internetClient"
+  # CI is non-interactive: don't prompt to install the generated test cert.
+  install_certificate: false
   # publisher: "CN=SMIC, O=SMIC, C=KR"   # from your signing certificate
   # certificate_path / certificate_password: supply via CI secrets
 
