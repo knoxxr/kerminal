@@ -3,6 +3,20 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.1.2]
+
+### Added
+- **Group autocomplete** — the group field suggests existing groups; hosts with
+  no group fall under the default group ("기본").
+
+### Changed
+- **Optional account** — username may be left blank; it defaults to the current
+  OS user on connect (like the `ssh` CLI).
+- **App-private storage** — the database now lives in the app support directory
+  instead of Documents, so it is removed on uninstall (a fresh install starts
+  empty) and is no longer synced to OneDrive. Existing data is moved over once
+  on first launch.
+
 ## [0.1.1]
 
 ### Changed
@@ -34,5 +48,6 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.1.2]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.2
 [0.1.1]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.1
 [0.1.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.0
