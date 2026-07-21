@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../application/providers.dart';
+import '../../data/ssh/key_generator.dart';
 import '../../domain/entities/host.dart';
 
 /// Create or edit a saved host. Secrets entered here are written to the secure
@@ -87,6 +89,57 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
             .showSnackBar(SnackBar(content: Text('Save failed: $e')));
       }
     }
+  }
+
+  Future<void> _generateKey() async {
+    final comment = _user.text.trim().isEmpty
+        ? 'kominal'
+        : '${_user.text.trim()}@kominal';
+    final key = const SshKeyGenerator().generateEd25519(comment: comment);
+    setState(() => _privateKey.text = key.privateKeyPem);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Key generated'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'The private key was filled in below. Install this public key '
+              "on the server's ~/.ssh/authorized_keys:",
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: SelectableText(
+                key.publicKeyLine,
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: key.publicKeyLine));
+              if (context.mounted) Navigator.pop(context);
+            },
+            icon: const Icon(Icons.copy),
+            label: const Text('Copy public key'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -197,6 +250,14 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
                 },
               )
             else ...[
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _generateKey,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Generate Ed25519 key'),
+                ),
+              ),
               TextFormField(
                 controller: _privateKey,
                 decoration: InputDecoration(
