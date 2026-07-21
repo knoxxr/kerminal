@@ -3,6 +3,14 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.1.5]
+
+### Added
+- **Encrypted backup & share** — export all hosts (including secrets) to a
+  passphrase-encrypted `.kerminal` file (PBKDF2 + AES-256-GCM) and import it
+  elsewhere with the same passphrase. Safe to share via Google Drive, etc.
+  (Settings → Backup & Share).
+
 ## [0.1.4]
 
 ### Added
@@ -61,6 +69,7 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.1.5]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.5
 [0.1.4]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.4
 [0.1.3]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.3
 [0.1.2]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.2
