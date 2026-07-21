@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+/// Group a host falls into when the user leaves the group field blank.
+const kDefaultGroup = '기본';
+
 /// Authentication method used to connect to a [Host].
 enum AuthMethod { password, sshKey }
 

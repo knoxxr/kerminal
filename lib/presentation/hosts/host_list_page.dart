@@ -58,11 +58,15 @@ class _HostListPageState extends ConsumerState<HostListPage> {
     }
   }
 
-  /// Groups + sorts hosts, applying the search filter.
-  Map<String?, List<Host>> _grouped(List<Host> hosts) {
+  String _groupOf(Host h) =>
+      (h.groupName?.isNotEmpty ?? false) ? h.groupName! : kDefaultGroup;
+
+  /// Groups + sorts hosts, applying the search filter. Hosts without a group
+  /// fall under the default group.
+  Map<String, List<Host>> _grouped(List<Host> hosts) {
     final q = _query.trim().toLowerCase();
     final filtered = q.isEmpty
-        ? hosts
+        ? [...hosts]
         : hosts.where((h) {
             return h.label.toLowerCase().contains(q) ||
                 h.hostname.toLowerCase().contains(q) ||
@@ -70,13 +74,13 @@ class _HostListPageState extends ConsumerState<HostListPage> {
           }).toList();
 
     filtered.sort((a, b) {
-      final g = (a.groupName ?? '~').compareTo(b.groupName ?? '~');
+      final g = _groupOf(a).compareTo(_groupOf(b));
       return g != 0 ? g : a.label.toLowerCase().compareTo(b.label.toLowerCase());
     });
 
-    final map = <String?, List<Host>>{};
+    final map = <String, List<Host>>{};
     for (final h in filtered) {
-      map.putIfAbsent(h.groupName, () => []).add(h);
+      map.putIfAbsent(_groupOf(h), () => []).add(h);
     }
     return map;
   }
@@ -135,14 +139,13 @@ class _HostListPageState extends ConsumerState<HostListPage> {
           return ListView(
             children: [
               for (final entry in grouped.entries) ...[
-                if (entry.key != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                    child: Text(
-                      entry.key!.toUpperCase(),
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Text(
+                    entry.key.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelSmall,
                   ),
+                ),
                 for (final host in entry.value)
                   _HostTile(
                     host: host,

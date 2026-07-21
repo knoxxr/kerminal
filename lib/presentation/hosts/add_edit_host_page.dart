@@ -31,6 +31,7 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
   final _password = TextEditingController();
   final _privateKey = TextEditingController();
   final _passphrase = TextEditingController();
+  final _groupFocus = FocusNode();
 
   late AuthMethod _authMethod;
   bool _obscure = true;
@@ -62,6 +63,7 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
     ]) {
       c.dispose();
     }
+    _groupFocus.dispose();
     super.dispose();
   }
 
@@ -205,12 +207,54 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
               autocorrect: false,
             ),
             const SizedBox(height: 12),
-            TextFormField(
-              controller: _group,
-              decoration: const InputDecoration(
-                labelText: 'Group (optional)',
-                hintText: 'Production',
-              ),
+            RawAutocomplete<String>(
+              textEditingController: _group,
+              focusNode: _groupFocus,
+              optionsBuilder: (value) {
+                final groups = ref.read(groupsProvider);
+                final q = value.text.trim().toLowerCase();
+                if (q.isEmpty) return groups;
+                return groups.where((g) => g.toLowerCase().contains(q));
+              },
+              fieldViewBuilder:
+                  (context, controller, focusNode, onFieldSubmitted) {
+                return TextFormField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Group (optional)',
+                    hintText: '비우면 "$kDefaultGroup" 그룹',
+                    suffixIcon: Icon(Icons.arrow_drop_down),
+                  ),
+                  onFieldSubmitted: (_) => onFieldSubmitted(),
+                );
+              },
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints:
+                          const BoxConstraints(maxHeight: 220, maxWidth: 560),
+                      child: ListView(
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        children: [
+                          for (final o in options)
+                            ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.folder_outlined),
+                              title: Text(o),
+                              onTap: () => onSelected(o),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
             SegmentedButton<AuthMethod>(

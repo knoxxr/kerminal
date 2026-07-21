@@ -34,3 +34,14 @@ final hostServiceProvider = Provider<HostService>(
     ref.watch(secureVaultProvider),
   ),
 );
+
+/// Distinct group names in use (always including the default group), sorted —
+/// powers the group-field autocomplete when adding a host.
+final groupsProvider = Provider<List<String>>((ref) {
+  final hosts = ref.watch(hostsProvider).asData?.value ?? const [];
+  final groups = <String>{kDefaultGroup};
+  for (final h in hosts) {
+    if (h.groupName != null && h.groupName!.isNotEmpty) groups.add(h.groupName!);
+  }
+  return groups.toList()..sort();
+});

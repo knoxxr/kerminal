@@ -135,6 +135,30 @@ void main() {
     expect(req.username, osUsername());
   });
 
+  test('blank group falls back to the default group; given group is kept',
+      () async {
+    final noGroup = await service.saveHost(
+      label: 'a',
+      hostname: 'h',
+      port: 22,
+      username: 'u',
+      authMethod: AuthMethod.password,
+      password: 'p',
+    );
+    expect(noGroup.groupName, kDefaultGroup);
+
+    final grouped = await service.saveHost(
+      label: 'b',
+      hostname: 'h',
+      port: 22,
+      username: 'u',
+      groupName: 'Production',
+      authMethod: AuthMethod.password,
+      password: 'p',
+    );
+    expect(grouped.groupName, 'Production');
+  });
+
   test('deleteHost removes metadata and secret', () async {
     final host = await service.saveHost(
       label: 'web',

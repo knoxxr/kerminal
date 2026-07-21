@@ -62,7 +62,8 @@ class HostService {
       port: port,
       username: username,
       authMethod: authMethod,
-      groupName: (groupName?.isEmpty ?? true) ? null : groupName,
+      groupName:
+          (groupName?.trim().isEmpty ?? true) ? kDefaultGroup : groupName!.trim(),
       credentialId: credentialId,
     );
     await _repo.upsertHost(host);
