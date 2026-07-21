@@ -12,7 +12,14 @@ abstract interface class SecretStore {
 class _FlutterSecretStore implements SecretStore {
   const _FlutterSecretStore();
 
-  static const _storage = FlutterSecureStorage();
+  // macOS: use the legacy file-based (login) keychain, not the data-protection
+  // keychain. The data-protection keychain requires an `application-identifier`
+  // entitlement that only exists when signed with an Apple team; our ad-hoc
+  // direct-distribution builds have none, so it fails with errSecMissingEntitlement
+  // (-34018). The file-based keychain works without that entitlement.
+  static const _storage = FlutterSecureStorage(
+    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+  );
 
   @override
   Future<void> write(String key, String value) =>
