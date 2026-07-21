@@ -33,6 +33,15 @@ dart run flutter_launcher_icons
 flutter build windows --release
 dart run msix:create        # → build/windows/x64/runner/Release/*.msix
 ```
+> **ATL 툴셋 주의:** `flutter_secure_storage`는 `atlstr.h`(ATL)를 요구합니다.
+> ATL이 최신 MSVC 툴셋(예: 14.44)에만 설치되고 v143 기본 툴셋이 구버전(예: 14.43)을
+> 가리키면 `error C1083: 'atlstr.h'`가 납니다. 빌드 셸에서 ATL 포함 툴셋을 지정하세요:
+> ```powershell
+> $env:VCToolsVersion = "14.44.35207"   # ATL이 설치된 툴셋 버전
+> flutter clean; flutter run -d windows
+> ```
+> 설치된 툴셋은 `…\BuildTools\VC\Tools\MSVC\`에서, ATL 유무는 각 폴더의
+> `atlmfc\include\atlstr.h` 존재로 확인합니다.
 - **서명/스토어:** `pubspec.yaml`의 `msix_config`에 `publisher`(인증서 CN)와
   인증서를 지정하거나, Microsoft Store 제출 시 `dart run msix:create --store`.
   파트너 센터 계정 필요.
