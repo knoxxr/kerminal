@@ -116,13 +116,13 @@ flutter build web --release   # → build/web (정적 호스팅)
 새 버전이 있으면 설정 화면과 호스트 목록(설정 아이콘 배지)에 알리고 플랫폼별
 다운로드 링크를 엽니다.
 
-**매니페스트 URL 지정** (빌드 시 `--dart-define`):
-```bash
-flutter build windows --dart-define=UPDATE_MANIFEST_URL=https://example.com/kerminal/latest.json
-```
-URL이 비어 있으면 업데이트 체크는 비활성(아무것도 표시 안 함)입니다.
+**매니페스트 URL**: 기본값으로 GitHub "최신 릴리스" 자산
+(`.../releases/latest/download/latest.json`)이 코드에 내장돼 있어, 별도 설정
+없이 동작합니다. 다른 곳을 쓰려면 빌드 시 `--dart-define=UPDATE_MANIFEST_URL=...`
+로 덮어쓰고, 빈 값으로 두면 체크가 비활성화됩니다.
 
-**`latest.json` 형식** (정적 호스트/GitHub Releases 자산 등):
+**`latest.json` 자동 생성**: 릴리스 워크플로가 매 릴리스마다 아래 형식으로
+`latest.json`을 만들어 릴리스에 첨부합니다(수동 관리 불필요). 형식:
 ```json
 {
   "version": "0.2.0",

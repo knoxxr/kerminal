@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.1.3]
+
+### Changed
+- **Update check wired up** — the in-app update check now defaults to the GitHub
+  "latest release" manifest, and each release publishes a `latest.json`. Older
+  versions detect new releases automatically (Settings → About & Updates).
+
 ## [0.1.2]
 
 ### Added
@@ -48,6 +55,7 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.1.3]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.3
 [0.1.2]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.2
 [0.1.1]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.1
 [0.1.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.0

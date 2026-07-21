@@ -4,10 +4,15 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'update_service.dart';
 
-/// Where the app looks for its release manifest. Set at build time with
-/// `--dart-define=UPDATE_MANIFEST_URL=...`. See DEPLOY.md.
-const kUpdateManifestUrl =
-    String.fromEnvironment('UPDATE_MANIFEST_URL', defaultValue: '');
+/// Where the app looks for its release manifest. Defaults to the GitHub
+/// "latest release" asset, which always resolves to the newest published
+/// release's `latest.json`. Override at build time with
+/// `--dart-define=UPDATE_MANIFEST_URL=...` (empty disables the check).
+const kUpdateManifestUrl = String.fromEnvironment(
+  'UPDATE_MANIFEST_URL',
+  defaultValue:
+      'https://github.com/knoxxr/kerminal/releases/latest/download/latest.json',
+);
 
 /// The manifest URL as a provider so it can be overridden in tests.
 final updateManifestUrlProvider = Provider<String>((ref) => kUpdateManifestUrl);

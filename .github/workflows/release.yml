@@ -121,8 +121,31 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      # Generate the update manifest describing THIS release. The app polls
+      # releases/latest/download/latest.json, so older versions detect it.
+      - name: Generate latest.json
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          BASE="${{ github.server_url }}/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}"
+          cat > latest.json <<EOF
+          {
+            "version": "${VERSION}",
+            "notes": "Kerminal ${VERSION}. See the release page for details.",
+            "downloads": {
+              "windows": "${BASE}/kerminal.msix",
+              "macos": "${BASE}/kerminal-macos.zip",
+              "linux": "${BASE}/kerminal-linux-x64.tar.gz",
+              "android": "${BASE}/kerminal.apk"
+            }
+          }
+          EOF
+          cat latest.json
+
       - uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*
+            latest.json
