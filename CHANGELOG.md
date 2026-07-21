@@ -3,6 +3,12 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.1.4]
+
+### Added
+- **Collapsible groups** — tap a group header to expand/collapse its hosts;
+  headers show the host count.
+
 ## [0.1.3]
 
 ### Changed
@@ -55,6 +61,7 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.1.4]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.4
 [0.1.3]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.3
 [0.1.2]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.2
 [0.1.1]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.1
