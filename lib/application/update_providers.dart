@@ -4,10 +4,13 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'update_service.dart';
 
-/// Where the app looks for its release manifest. Replace with your real URL
-/// (e.g. a GitHub Releases asset or static host). See DEPLOY.md.
+/// Where the app looks for its release manifest. Set at build time with
+/// `--dart-define=UPDATE_MANIFEST_URL=...`. See DEPLOY.md.
 const kUpdateManifestUrl =
     String.fromEnvironment('UPDATE_MANIFEST_URL', defaultValue: '');
+
+/// The manifest URL as a provider so it can be overridden in tests.
+final updateManifestUrlProvider = Provider<String>((ref) => kUpdateManifestUrl);
 
 final httpClientProvider = Provider<http.Client>((ref) {
   final client = http.Client();
@@ -23,12 +26,13 @@ final packageInfoProvider = FutureProvider<PackageInfo>(
 /// configured or the check fails (offline, unreachable) — the UI then simply
 /// shows nothing. Re-run with `ref.invalidate(updateCheckProvider)`.
 final updateCheckProvider = FutureProvider<UpdateInfo?>((ref) async {
-  if (kUpdateManifestUrl.isEmpty) return null;
+  final url = ref.watch(updateManifestUrlProvider);
+  if (url.isEmpty) return null;
 
   final info = await ref.watch(packageInfoProvider.future);
   final service = UpdateService(
     client: ref.watch(httpClientProvider),
-    manifestUrl: Uri.parse(kUpdateManifestUrl),
+    manifestUrl: Uri.parse(url),
     currentVersion: info.version,
   );
   try {
