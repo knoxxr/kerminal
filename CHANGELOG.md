@@ -26,4 +26,4 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
-[0.1.0]: https://example.com/kerminal/releases/tag/v0.1.0
+[0.1.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.0
