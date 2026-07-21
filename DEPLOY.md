@@ -42,9 +42,13 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
 > ```
 > 설치된 툴셋은 `…\BuildTools\VC\Tools\MSVC\`에서, ATL 유무는 각 폴더의
 > `atlmfc\include\atlstr.h` 존재로 확인합니다.
-- **서명/스토어:** `pubspec.yaml`의 `msix_config`에 `publisher`(인증서 CN)와
-  인증서를 지정하거나, Microsoft Store 제출 시 `dart run msix:create --store`.
-  파트너 센터 계정 필요.
+- **서명(현재):** 자체 서명 코드사이닝 인증서(`CN=SMIC`)로 CI에서 서명합니다.
+  개인키(`.pfx`)는 GitHub Actions 시크릿 `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`,
+  공개 인증서는 `windows/kerminal-codesign.cer`(릴리스에 동봉).
+  - **최종 사용자 설치:** `kerminal-codesign.cer`를 우클릭 → **인증서 설치 → 로컬 컴퓨터
+    → "신뢰할 수 있는 사람(Trusted People)"**에 저장한 뒤 `.msix` 실행. (최초 1회)
+- **정식 서명/스토어:** 상용 Authenticode(OV/EV) 인증서로 교체하거나 Microsoft Store
+  제출(`dart run msix:create --store`, 파트너 센터 계정) 시 경고 없이 설치됩니다.
 
 ## macOS (DMG)
 빌드 환경: macOS + Xcode.

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.1.0+1
+version: 0.1.1+2
 
 environment:
   sdk: ^3.12.2
@@ -94,13 +94,15 @@ msix_config:
   display_name: Kerminal
   publisher_display_name: SMIC
   identity_name: kr.smic.kerminal
-  msix_version: 0.1.0.0
+  msix_version: 0.1.1.0
   logo_path: assets/icon/app_icon.png
   capabilities: "internetClient"
-  # CI is non-interactive: don't prompt to install the generated test cert.
+  # Must match the signing certificate's subject (windows/kerminal-codesign.cer).
+  publisher: "CN=SMIC"
+  # CI is non-interactive: never prompt to install a cert.
   install_certificate: false
-  # publisher: "CN=SMIC, O=SMIC, C=KR"   # from your signing certificate
-  # certificate_path / certificate_password: supply via CI secrets
+  # The .pfx + password are supplied in CI via --certificate-path / secrets
+  # (see .github/workflows/release.yml). Fork builds fall back to a test cert.
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

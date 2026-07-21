@@ -52,17 +52,29 @@ jobs:
       - run: flutter pub get
       - run: dart run build_runner build
 
-      # --- Windows: MSIX installer ---
+      # --- Windows: MSIX installer, signed with the self-signed cert ---
       - if: matrix.target == 'windows'
-        run: dart run msix:create
-        # For a signed/store build, supply certificate secrets and add
-        #   --store  or  --certificate-path/--certificate-password
+        shell: pwsh
+        env:
+          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          if ($env:WINDOWS_CERT_BASE64) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64))
+            dart run msix:create --certificate-path $pfx --certificate-password $env:WINDOWS_CERT_PASSWORD
+          } else {
+            Write-Host 'No signing secret; building with msix test certificate.'
+            dart run msix:create
+          }
       - if: matrix.target == 'windows'
+        shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item build/windows/x64/runner/Release/*.msix dist/ -ErrorAction SilentlyContinue
           if (-not (Test-Path dist/*.msix)) { Compress-Archive build/windows/x64/runner/Release/* dist/kerminal-windows.zip }
-        shell: pwsh
+          # Publish the public cert so users can trust it once (Trusted People).
+          Copy-Item windows/kerminal-codesign.cer dist/ -ErrorAction SilentlyContinue
 
       # --- macOS: .app bundle (zip). DMG needs signing/notarization (see DEPLOY.md) ---
       - if: matrix.target == 'macos'

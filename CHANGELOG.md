@@ -3,7 +3,15 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
-## [0.1.0] — Unreleased (MVP)
+## [0.1.1]
+
+### Changed
+- Windows MSIX is now signed with a self-signed code-signing certificate
+  (`CN=SMIC`). The public cert (`kerminal-codesign.cer`) ships with the release;
+  trust it once ("Trusted People") to install without the unknown-publisher
+  warning.
+
+## [0.1.0] (MVP)
 
 First feature-complete MVP: a cross-platform SSH/terminal client.
 
@@ -26,4 +34,5 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.1.1]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.1
 [0.1.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.0
