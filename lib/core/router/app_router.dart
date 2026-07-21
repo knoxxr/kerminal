@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/host.dart';
 import '../../domain/entities/ssh_connection_request.dart';
 import '../../presentation/connect/quick_connect_page.dart';
+import '../../presentation/hosts/add_edit_host_page.dart';
 import '../../presentation/hosts/host_list_page.dart';
 import '../../presentation/terminal/terminal_page.dart';
 
@@ -20,6 +22,17 @@ final appRouter = GoRouter(
       name: 'connect',
       builder: (context, state) =>
           QuickConnectPage(prefill: state.extra as SshConnectionRequest?),
+    ),
+    GoRoute(
+      path: '/host/new',
+      name: 'newHost',
+      builder: (context, state) => const AddEditHostPage(),
+    ),
+    GoRoute(
+      path: '/host/edit',
+      name: 'editHost',
+      builder: (context, state) =>
+          AddEditHostPage(existing: state.extra as Host?),
     ),
     GoRoute(
       path: '/terminal',

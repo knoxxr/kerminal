@@ -5,6 +5,7 @@ import '../data/repositories/drift_host_repository.dart';
 import '../data/vault/secure_vault.dart';
 import '../domain/entities/host.dart';
 import '../domain/repositories/host_repository.dart';
+import 'host_service.dart';
 
 /// Singleton drift database for the app's lifetime.
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -24,4 +25,12 @@ final hostRepositoryProvider = Provider<HostRepository>(
 /// Live list of saved hosts, re-emitting on every change.
 final hostsProvider = StreamProvider<List<Host>>(
   (ref) => ref.watch(hostRepositoryProvider).watchHosts(),
+);
+
+/// Coordinates host metadata with vault-stored secrets.
+final hostServiceProvider = Provider<HostService>(
+  (ref) => HostService(
+    ref.watch(hostRepositoryProvider),
+    ref.watch(secureVaultProvider),
+  ),
 );
