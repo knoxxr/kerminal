@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../application/known_hosts.dart';
 import '../../application/sessions.dart';
+import '../../core/os_user.dart';
 import '../../domain/entities/ssh_connection_request.dart';
 import '../terminal/host_key_prompt.dart';
 
@@ -54,10 +55,11 @@ class _QuickConnectPageState extends ConsumerState<QuickConnectPage> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
+    final user = _user.text.trim();
     final request = SshConnectionRequest(
       host: _host.text.trim(),
       port: int.parse(_port.text.trim()),
-      username: _user.text.trim(),
+      username: user.isEmpty ? osUsername() : user,
       authKind: _authKind,
       password: _authKind == SshAuthKind.password ? _password.text : null,
       privateKeyPem: _authKind == SshAuthKind.key ? _privateKey.text : null,
@@ -113,10 +115,11 @@ class _QuickConnectPageState extends ConsumerState<QuickConnectPage> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _user,
-              decoration: const InputDecoration(labelText: 'Username'),
+              decoration: const InputDecoration(
+                labelText: 'Username (optional)',
+                hintText: 'Defaults to the current user',
+              ),
               autocorrect: false,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 20),
             SegmentedButton<SshAuthKind>(

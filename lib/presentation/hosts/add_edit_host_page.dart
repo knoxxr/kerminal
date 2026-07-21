@@ -198,10 +198,11 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _user,
-              decoration: const InputDecoration(labelText: 'Username'),
+              decoration: const InputDecoration(
+                labelText: 'Username (optional)',
+                hintText: 'Defaults to the current user',
+              ),
               autocorrect: false,
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 12),
             TextFormField(

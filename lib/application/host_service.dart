@@ -1,5 +1,6 @@
 import 'package:uuid/uuid.dart';
 
+import '../core/os_user.dart';
 import '../data/vault/secure_vault.dart';
 import '../domain/entities/host.dart';
 import '../domain/entities/ssh_connection_request.dart';
@@ -72,11 +73,13 @@ class HostService {
   /// vault. The result is transient and never persisted.
   Future<SshConnectionRequest> buildRequest(Host host) async {
     final cid = host.credentialId;
+    // Blank account => default to the OS user (like the ssh CLI).
+    final username = host.username.isEmpty ? osUsername() : host.username;
     if (host.authMethod == AuthMethod.sshKey) {
       return SshConnectionRequest(
         host: host.hostname,
         port: host.port,
-        username: host.username,
+        username: username,
         authKind: SshAuthKind.key,
         privateKeyPem: cid == null ? null : await _vault.readSecret(_keyKey(cid)),
         passphrase: cid == null ? null : await _vault.readSecret(_passKey(cid)),
@@ -86,7 +89,7 @@ class HostService {
     return SshConnectionRequest(
       host: host.hostname,
       port: host.port,
-      username: host.username,
+      username: username,
       authKind: SshAuthKind.password,
       password: cid == null ? null : await _vault.readSecret(_pwKey(cid)),
       label: host.label,

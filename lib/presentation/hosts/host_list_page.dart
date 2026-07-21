@@ -184,7 +184,9 @@ class _HostTile extends StatelessWidget {
         host.authMethod == AuthMethod.sshKey ? Icons.key : Icons.dns_outlined,
       ),
       title: Text(host.label),
-      subtitle: Text('${host.username}@${host.hostname}:${host.port}'),
+      subtitle: Text(host.username.isEmpty
+          ? '${host.hostname}:${host.port}'
+          : '${host.username}@${host.hostname}:${host.port}'),
       onTap: onTap,
       trailing: PopupMenuButton<String>(
         onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),

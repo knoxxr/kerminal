@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kerminal/application/host_service.dart';
+import 'package:kerminal/core/os_user.dart';
 import 'package:kerminal/data/vault/secure_vault.dart';
 import 'package:kerminal/domain/entities/host.dart';
 import 'package:kerminal/domain/entities/ssh_connection_request.dart';
@@ -114,6 +115,24 @@ void main() {
     expect(edited.credentialId, host.credentialId);
     final req = await service.buildRequest(edited);
     expect(req.password, 'keepme');
+  });
+
+  test('blank username is allowed and resolves to the OS user on connect',
+      () async {
+    final host = await service.saveHost(
+      label: 'no-account',
+      hostname: 'example.com',
+      port: 22,
+      username: '', // optional — left blank
+      authMethod: AuthMethod.password,
+      password: 'pw',
+    );
+
+    // Stored blank (portable across machines)...
+    expect(host.username, '');
+    // ...resolved to the current OS user when building the connection.
+    final req = await service.buildRequest(host);
+    expect(req.username, osUsername());
   });
 
   test('deleteHost removes metadata and secret', () async {
