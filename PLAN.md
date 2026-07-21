@@ -1,4 +1,4 @@
-# Kominal — 개발 계획서
+# Kerminal — 개발 계획서
 
 > Termius 유사 크로스플랫폼 SSH/터미널 클라이언트
 > 작성일: 2026-07-21
@@ -52,7 +52,7 @@ Termius와 유사한 크로스플랫폼 SSH 클라이언트를 개발한다.
 - [x] Flutter 프로젝트 생성, 5개 플랫폼 빌드 확인 (web 빌드 검증)
 - [x] 폴더 구조(Clean Architecture) + Riverpod/드리프트 스캐폴딩
 - [x] CI(GitHub Actions): 포맷·분석·테스트, 플랫폼별 빌드
-- [x] 앱 이름(kominal) / org(kr.smic) 확정 — 아이콘은 후속
+- [x] 앱 이름(kerminal) / org(kr.smic) 확정 — 아이콘은 후속
 
 ### Phase 1 — 터미널 코어 (2주) ✅ 완료
 - [x] `xterm.dart` 터미널 위젯 통합, 스크롤백(10k)
@@ -107,5 +107,5 @@ Termius와 유사한 크로스플랫폼 SSH 클라이언트를 개발한다.
 
 ## 7. 다음 액션
 1. 스택/계획 확정 → `flutter create` 로 Phase 0 시작
-2. 앱 이름/번들 ID 확정 (`kominal`?)
+2. 앱 이름/번들 ID 확정 (`kerminal`?)
 3. Phase 1 스파이크: `dartssh2` + `xterm.dart` 접속 PoC 1개 작성

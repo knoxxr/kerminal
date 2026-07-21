@@ -3,9 +3,9 @@
 # them. In CI, generate key.properties from secrets instead.
 #
 # Create a keystore with:
-#   keytool -genkey -v -keystore kominal-release.jks -keyalg RSA -keysize 2048 \
-#           -validity 10000 -alias kominal
+#   keytool -genkey -v -keystore kerminal-release.jks -keyalg RSA -keysize 2048 \
+#           -validity 10000 -alias kerminal
 storePassword=changeit
 keyPassword=changeit
-keyAlias=kominal
-storeFile=/absolute/path/to/kominal-release.jks
+keyAlias=kerminal
+storeFile=/absolute/path/to/kerminal-release.jks

@@ -2,7 +2,7 @@
     <!-- Required for SSH connections and update checks in release builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="kominal"
+        android:label="kerminal"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

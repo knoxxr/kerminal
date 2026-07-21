@@ -1,6 +1,6 @@
 # 배포 가이드 (Deployment)
 
-Kominal은 Flutter 단일 코드베이스로 6개 타깃(Windows/macOS/Linux/iOS/Android/Web)을
+Kerminal은 Flutter 단일 코드베이스로 6개 타깃(Windows/macOS/Linux/iOS/Android/Web)을
 배포합니다. 이 문서는 릴리스 아티팩트 빌드와 서명/스토어 제출 절차를 정리합니다.
 
 > **자동화:** 태그를 밀면 GitHub Actions([release.yml](.github/workflows/release.yml))가
@@ -70,8 +70,8 @@ flutter_distributor release --name linux --jobs linux-appimage
 빌드 환경: Android SDK(+cmdline-tools) + JDK 17.
 1. 릴리스 키스토어 생성:
    ```bash
-   keytool -genkey -v -keystore kominal-release.jks -keyalg RSA -keysize 2048 \
-           -validity 10000 -alias kominal
+   keytool -genkey -v -keystore kerminal-release.jks -keyalg RSA -keysize 2048 \
+           -validity 10000 -alias kerminal
    ```
 2. `android/key.properties.example`를 `android/key.properties`로 복사해 채웁니다
    (키스토어·비밀번호는 **커밋 금지**, gitignore됨).
@@ -108,7 +108,7 @@ flutter build web --release   # → build/web (정적 호스팅)
 
 **매니페스트 URL 지정** (빌드 시 `--dart-define`):
 ```bash
-flutter build windows --dart-define=UPDATE_MANIFEST_URL=https://example.com/kominal/latest.json
+flutter build windows --dart-define=UPDATE_MANIFEST_URL=https://example.com/kerminal/latest.json
 ```
 URL이 비어 있으면 업데이트 체크는 비활성(아무것도 표시 안 함)입니다.
 
@@ -118,10 +118,10 @@ URL이 비어 있으면 업데이트 체크는 비활성(아무것도 표시 안
   "version": "0.2.0",
   "notes": "변경 사항 요약",
   "downloads": {
-    "windows": "https://example.com/kominal-0.2.0.msix",
-    "macos":   "https://example.com/kominal-0.2.0.dmg",
-    "linux":   "https://example.com/kominal-0.2.0.AppImage",
-    "android": "https://example.com/kominal-0.2.0.apk"
+    "windows": "https://example.com/kerminal-0.2.0.msix",
+    "macos":   "https://example.com/kerminal-0.2.0.dmg",
+    "linux":   "https://example.com/kerminal-0.2.0.AppImage",
+    "android": "https://example.com/kerminal-0.2.0.apk"
   }
 }
 ```

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kominal/application/host_service.dart';
-import 'package:kominal/data/vault/secure_vault.dart';
-import 'package:kominal/domain/entities/host.dart';
-import 'package:kominal/domain/entities/ssh_connection_request.dart';
-import 'package:kominal/domain/repositories/host_repository.dart';
+import 'package:kerminal/application/host_service.dart';
+import 'package:kerminal/data/vault/secure_vault.dart';
+import 'package:kerminal/domain/entities/host.dart';
+import 'package:kerminal/domain/entities/ssh_connection_request.dart';
+import 'package:kerminal/domain/repositories/host_repository.dart';
 
 class _MemStore implements SecretStore {
   final Map<String, String> data = {};

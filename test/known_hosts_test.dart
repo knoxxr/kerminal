@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kominal/application/known_hosts.dart';
+import 'package:kerminal/application/known_hosts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

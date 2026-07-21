@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kominal/application/ssh_terminal_controller.dart';
-import 'package:kominal/domain/entities/ssh_connection_request.dart';
+import 'package:kerminal/application/ssh_terminal_controller.dart';
+import 'package:kerminal/domain/entities/ssh_connection_request.dart';
 
 void main() {
   group('SshConnectionRequest.displayName', () {

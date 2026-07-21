@@ -116,7 +116,7 @@ class _UpdateSection extends ConsumerWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.info_outline),
-          title: const Text('Kominal'),
+          title: const Text('Kerminal'),
           subtitle: Text(version),
           trailing: update.isLoading
               ? const SizedBox(

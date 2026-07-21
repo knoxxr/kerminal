@@ -23,7 +23,7 @@ class SshKeyGenerator {
   /// pinenacl's [SigningKey] stores the 64-byte `seed || publicKey` secret,
   /// which is exactly the OpenSSH Ed25519 private-key representation, so it
   /// feeds [OpenSSHEd25519KeyPair] directly.
-  GeneratedKey generateEd25519({String comment = 'kominal'}) {
+  GeneratedKey generateEd25519({String comment = 'kerminal'}) {
     final signing = SigningKey.generate();
     final publicKey = Uint8List.fromList(signing.verifyKey.asTypedList);
     final privateKey = Uint8List.fromList(signing.asTypedList); // 64 bytes

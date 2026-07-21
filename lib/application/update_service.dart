@@ -32,10 +32,10 @@ class UpdateInfo {
 ///   "version": "0.2.0",
 ///   "notes": "What changed...",
 ///   "downloads": {
-///     "windows": "https://.../kominal-0.2.0.msix",
-///     "macos":   "https://.../kominal-0.2.0.dmg",
-///     "linux":   "https://.../kominal-0.2.0.AppImage",
-///     "android": "https://.../kominal-0.2.0.apk"
+///     "windows": "https://.../kerminal-0.2.0.msix",
+///     "macos":   "https://.../kerminal-0.2.0.dmg",
+///     "linux":   "https://.../kerminal-0.2.0.AppImage",
+///     "android": "https://.../kerminal-0.2.0.apk"
 ///   }
 /// }
 /// ```

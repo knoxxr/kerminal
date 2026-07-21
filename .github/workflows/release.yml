@@ -60,7 +60,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Copy-Item build/windows/x64/runner/Release/*.msix dist/ -ErrorAction SilentlyContinue
-          if (-not (Test-Path dist/*.msix)) { Compress-Archive build/windows/x64/runner/Release/* dist/kominal-windows.zip }
+          if (-not (Test-Path dist/*.msix)) { Compress-Archive build/windows/x64/runner/Release/* dist/kerminal-windows.zip }
         shell: pwsh
 
       # --- macOS: .app bundle (zip). DMG needs signing/notarization (see DEPLOY.md) ---
@@ -69,14 +69,14 @@ jobs:
           flutter build macos --release
           mkdir -p dist
           cd build/macos/Build/Products/Release
-          zip -r -y "$GITHUB_WORKSPACE/dist/kominal-macos.zip" kominal.app
+          zip -r -y "$GITHUB_WORKSPACE/dist/kerminal-macos.zip" kerminal.app
 
       # --- Linux: bundle tarball ---
       - if: matrix.target == 'linux'
         run: |
           flutter build linux --release
           mkdir -p dist
-          tar -czf dist/kominal-linux-x64.tar.gz -C build/linux/x64/release/bundle .
+          tar -czf dist/kerminal-linux-x64.tar.gz -C build/linux/x64/release/bundle .
 
       # --- Android: APK + AAB (debug-signed unless key.properties provided) ---
       - if: matrix.target == 'android'
@@ -84,19 +84,19 @@ jobs:
           flutter build apk --release
           flutter build appbundle --release
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/kominal.apk
-          cp build/app/outputs/bundle/release/app-release.aab dist/kominal.aab
+          cp build/app/outputs/flutter-apk/app-release.apk dist/kerminal.apk
+          cp build/app/outputs/bundle/release/app-release.aab dist/kerminal.aab
 
       # --- Web: static bundle ---
       - if: matrix.target == 'web'
         run: |
           flutter build web --release
           mkdir -p dist
-          tar -czf dist/kominal-web.tar.gz -C build/web .
+          tar -czf dist/kerminal-web.tar.gz -C build/web .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: kominal-${{ matrix.target }}
+          name: kerminal-${{ matrix.target }}
           path: dist/*
 
   release:

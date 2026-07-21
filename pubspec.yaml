@@ -1,4 +1,4 @@
-name: kominal
+name: kerminal
 description: "Cross-platform SSH/terminal client"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -91,9 +91,9 @@ flutter_launcher_icons:
 # For Microsoft Store submission, set `store: true` and a real `publisher`
 # (CN=... matching your code-signing certificate).
 msix_config:
-  display_name: Kominal
+  display_name: Kerminal
   publisher_display_name: SMIC
-  identity_name: kr.smic.kominal
+  identity_name: kr.smic.kerminal
   msix_version: 0.1.0.0
   logo_path: assets/icon/app_icon.png
   capabilities: "internetClient"

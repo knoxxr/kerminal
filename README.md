@@ -1,4 +1,4 @@
-# Kominal
+# Kerminal
 
 Termius 유사 크로스플랫폼 SSH/터미널 클라이언트. Flutter 단일 코드베이스로 Windows / macOS / Linux / iOS / Android / Web을 지원합니다.
 
@@ -6,15 +6,15 @@ Termius 유사 크로스플랫폼 SSH/터미널 클라이언트. Flutter 단일 
 
 ## 다운로드 / 배포
 
-최신 릴리스: **[Releases 페이지](https://github.com/<org>/kominal/releases/latest)** · [전체 릴리스](https://github.com/<org>/kominal/releases)
+최신 릴리스: **[Releases 페이지](https://github.com/<org>/kerminal/releases/latest)** · [전체 릴리스](https://github.com/<org>/kerminal/releases)
 
 | 플랫폼 | 아티팩트 | 비고 |
 |--------|----------|------|
-| Windows | [`.msix`](https://github.com/<org>/kominal/releases/latest) | 설치 관리자 |
-| macOS | [`.dmg`](https://github.com/<org>/kominal/releases/latest) | Apple 서명·공증 필요 |
-| Linux | [`.AppImage` / `.deb`](https://github.com/<org>/kominal/releases/latest) | |
-| Android | [`.apk` / `.aab`](https://github.com/<org>/kominal/releases/latest) | Play Store: `.aab` |
-| Web | [웹 데모](https://<org>.github.io/kominal/) | UI 전용 (브라우저 제약으로 직접 SSH 불가) |
+| Windows | [`.msix`](https://github.com/<org>/kerminal/releases/latest) | 설치 관리자 |
+| macOS | [`.dmg`](https://github.com/<org>/kerminal/releases/latest) | Apple 서명·공증 필요 |
+| Linux | [`.AppImage` / `.deb`](https://github.com/<org>/kerminal/releases/latest) | |
+| Android | [`.apk` / `.aab`](https://github.com/<org>/kerminal/releases/latest) | Play Store: `.aab` |
+| Web | [웹 데모](https://<org>.github.io/kerminal/) | UI 전용 (브라우저 제약으로 직접 SSH 불가) |
 
 > 릴리스 아티팩트는 `git tag vX.Y.Z` 푸시 시 [GitHub Actions](.github/workflows/release.yml)가
 > 자동으로 빌드해 **드래프트 릴리스**에 첨부합니다. 앱은 [`latest.json`](DEPLOY.md#자동-업데이트-버전-인식--다운로드-안내)

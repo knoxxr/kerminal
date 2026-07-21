@@ -93,8 +93,8 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
 
   Future<void> _generateKey() async {
     final comment = _user.text.trim().isEmpty
-        ? 'kominal'
-        : '${_user.text.trim()}@kominal';
+        ? 'kerminal'
+        : '${_user.text.trim()}@kerminal';
     final key = const SshKeyGenerator().generateEd25519(comment: comment);
     setState(() => _privateKey.text = key.privateKeyPem);
     if (!mounted) return;

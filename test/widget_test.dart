@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kominal/domain/entities/host.dart';
+import 'package:kerminal/domain/entities/host.dart';
 
 void main() {
   test('Host.copyWith overrides only the given fields', () {

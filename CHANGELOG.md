@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Kominal are documented here. Format loosely follows
+All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
 ## [0.1.0] — Unreleased (MVP)
@@ -26,4 +26,4 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
-[0.1.0]: https://example.com/kominal/releases/tag/v0.1.0
+[0.1.0]: https://example.com/kerminal/releases/tag/v0.1.0

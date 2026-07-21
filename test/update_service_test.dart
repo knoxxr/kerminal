@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:kominal/application/update_service.dart';
+import 'package:kerminal/application/update_service.dart';
 
 UpdateService _service(String current) => UpdateService(
       client: http.Client(),
@@ -13,8 +13,8 @@ const _manifest = '''
   "version": "0.2.0",
   "notes": "New stuff",
   "downloads": {
-    "windows": "https://example.com/kominal-0.2.0.msix",
-    "android": "https://example.com/kominal-0.2.0.apk"
+    "windows": "https://example.com/kerminal-0.2.0.msix",
+    "android": "https://example.com/kerminal-0.2.0.apk"
   }
 }
 ''';
@@ -40,7 +40,7 @@ void main() {
   test('picks the platform-specific download url', () {
     // In the test VM, defaultTargetPlatform is android.
     final info = _service('0.1.0').parseManifest(_manifest);
-    expect(info.downloadUrl, 'https://example.com/kominal-0.2.0.apk');
+    expect(info.downloadUrl, 'https://example.com/kerminal-0.2.0.apk');
   });
 
   test('handles a manifest without downloads', () {

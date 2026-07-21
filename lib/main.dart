@@ -12,19 +12,19 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      child: const KominalApp(),
+      child: const KerminalApp(),
     ),
   );
 }
 
-class KominalApp extends ConsumerWidget {
-  const KominalApp({super.key});
+class KerminalApp extends ConsumerWidget {
+  const KerminalApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(settingsProvider.select((s) => s.themeMode));
     return MaterialApp.router(
-      title: 'Kominal',
+      title: 'Kerminal',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
