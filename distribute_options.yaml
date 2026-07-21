@@ -1,0 +1,40 @@
+# flutter_distributor configuration.
+#   dart pub global activate flutter_distributor
+#   flutter_distributor release --name <release> --jobs <job>
+#
+# Each target must be built on its native OS (Windows msix on Windows,
+# dmg on macOS, deb/appimage on Linux). See DEPLOY.md.
+output: dist/
+releases:
+  - name: windows
+    jobs:
+      - name: windows-msix
+        package:
+          platform: windows
+          target: msix
+  - name: android
+    jobs:
+      - name: android-apk
+        package:
+          platform: android
+          target: apk
+      - name: android-aab
+        package:
+          platform: android
+          target: aab
+  - name: linux
+    jobs:
+      - name: linux-deb
+        package:
+          platform: linux
+          target: deb
+      - name: linux-appimage
+        package:
+          platform: linux
+          target: appimage
+  - name: macos
+    jobs:
+      - name: macos-dmg
+        package:
+          platform: macos
+          target: dmg

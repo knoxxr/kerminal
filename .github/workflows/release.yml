@@ -1,0 +1,115 @@
+name: Release
+
+# Tag a commit to build release artifacts for every platform and attach them
+# to a draft GitHub Release, e.g.:  git tag v0.1.0 && git push origin v0.1.0
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: windows
+          - os: macos-latest
+            target: macos
+          - os: ubuntu-latest
+            target: linux
+          - os: ubuntu-latest
+            target: android
+          - os: ubuntu-latest
+            target: web
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Linux desktop build prerequisites.
+      - if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libgtk-3-dev
+
+      - if: matrix.target == 'android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - run: flutter pub get
+      - run: dart run build_runner build
+
+      # --- Windows: MSIX installer ---
+      - if: matrix.target == 'windows'
+        run: dart run msix:create
+        # For a signed/store build, supply certificate secrets and add
+        #   --store  or  --certificate-path/--certificate-password
+      - if: matrix.target == 'windows'
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/windows/x64/runner/Release/*.msix dist/ -ErrorAction SilentlyContinue
+          if (-not (Test-Path dist/*.msix)) { Compress-Archive build/windows/x64/runner/Release/* dist/kominal-windows.zip }
+        shell: pwsh
+
+      # --- macOS: .app bundle (zip). DMG needs signing/notarization (see DEPLOY.md) ---
+      - if: matrix.target == 'macos'
+        run: |
+          flutter build macos --release
+          mkdir -p dist
+          cd build/macos/Build/Products/Release
+          zip -r -y "$GITHUB_WORKSPACE/dist/kominal-macos.zip" kominal.app
+
+      # --- Linux: bundle tarball ---
+      - if: matrix.target == 'linux'
+        run: |
+          flutter build linux --release
+          mkdir -p dist
+          tar -czf dist/kominal-linux-x64.tar.gz -C build/linux/x64/release/bundle .
+
+      # --- Android: APK + AAB (debug-signed unless key.properties provided) ---
+      - if: matrix.target == 'android'
+        run: |
+          flutter build apk --release
+          flutter build appbundle --release
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk dist/kominal.apk
+          cp build/app/outputs/bundle/release/app-release.aab dist/kominal.aab
+
+      # --- Web: static bundle ---
+      - if: matrix.target == 'web'
+        run: |
+          flutter build web --release
+          mkdir -p dist
+          tar -czf dist/kominal-web.tar.gz -C build/web .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kominal-${{ matrix.target }}
+          path: dist/*
+
+  release:
+    name: Draft GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: artifacts/**/*

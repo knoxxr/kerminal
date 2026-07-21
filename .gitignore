@@ -47,3 +47,13 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release signing secrets — never commit
+/android/key.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+# Packaged release artifacts
+/dist/

@@ -1,0 +1,11 @@
+# Copy to android/key.properties and fill in your release keystore details.
+# This file (key.properties) and the .jks keystore are gitignored — never commit
+# them. In CI, generate key.properties from secrets instead.
+#
+# Create a keystore with:
+#   keytool -genkey -v -keystore kominal-release.jks -keyalg RSA -keysize 2048 \
+#           -validity 10000 -alias kominal
+storePassword=changeit
+keyPassword=changeit
+keyAlias=kominal
+storeFile=/absolute/path/to/kominal-release.jks

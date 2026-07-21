@@ -77,10 +77,14 @@ Termius와 유사한 크로스플랫폼 SSH 클라이언트를 개발한다.
 - [x] 테마(시스템/라이트/다크) + 폰트 크기 설정 (영속화)
 - **완료 기준 충족:** MVP 품질 — analyze/test/web + docker 실서버 e2e 통과
 
-### Phase 4 — 배포 (1주)
-- [ ] 데스크톱: MSI/DMG/AppImage 패키징, 코드사이닝
-- [ ] 모바일: App Store / Play Store 심사 준비
-- [ ] 자동 업데이트(데스크톱) 채널
+### Phase 4 — 배포 (1주) ✅ 구성 완료
+- [x] 전 플랫폼 앱 아이콘 (flutter_launcher_icons, 소스 assets/icon/app_icon.png)
+- [x] 데스크톱 패키징 구성: Windows MSIX(msix), Linux deb/AppImage·macOS DMG(flutter_distributor)
+- [x] Android 릴리스 서명 구성 (key.properties, build.gradle.kts) + APK/AAB
+- [x] 태그 기반 GitHub Actions 릴리스 워크플로 (전 플랫폼 아티팩트 → 드래프트 릴리스)
+- [x] 버전 체계, LICENSE, CHANGELOG, DEPLOY.md
+- [ ] 실제 코드사이닝/스토어 제출 — **사용자 인증서·계정 필요** (DEPLOY.md 참고)
+- [ ] 자동 업데이트(데스크톱) 채널 — 후속 (DEPLOY.md에 방안 기술)
 
 **총 MVP 예상: 약 8주 (1~2인 기준)**
 

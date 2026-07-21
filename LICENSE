@@ -1,0 +1,10 @@
+Copyright (c) 2026 SMIC. All rights reserved.
+
+This software and its source code are proprietary and confidential.
+Unauthorized copying, distribution, modification, or use of this software,
+via any medium, is strictly prohibited without the prior written permission
+of the copyright holder.
+
+NOTE: This is a placeholder proprietary license. If you intend to open-source
+Kominal, replace this file with an OSI-approved license (e.g. MIT, Apache-2.0)
+and update the license reference in README.md and pubspec.yaml.
