@@ -2,7 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.security.app-sandbox</key>
-	<true/>
+	<!--
+	  Direct (non-App-Store) distribution: the app is intentionally NOT sandboxed
+	  so flutter_secure_storage can reach the login keychain and dartssh2 can open
+	  outbound connections under ad-hoc signing (no Apple Developer team). A
+	  sandboxed build would return errSecMissingEntitlement (-34018) unless it had
+	  a keychain-access-groups entitlement backed by a real team prefix, plus
+	  com.apple.security.network.client. See DEPLOY.md (macOS).
+	-->
 </dict>
 </plist>

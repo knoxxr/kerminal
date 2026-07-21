@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.1.6]
+
+### Fixed
+- **macOS 호스트 저장 실패(-34018) 해결** — App Sandbox를 해제해
+  `flutter_secure_storage`의 키체인 접근과 SSH 아웃바운드 연결을 허용합니다.
+  Apple 팀 서명 없이 직접 배포(ad-hoc)하는 구성에 맞춘 변경입니다.
+
 ## [0.1.5]
 
 ### Added

@@ -63,6 +63,12 @@ flutter build macos --release
 # DMG 생성 (create-dmg 또는 flutter_distributor)
 flutter_distributor release --name macos --jobs macos-dmg
 ```
+- **App Sandbox 비활성화(중요):** `macos/Runner/*.entitlements`에서 샌드박스를
+  꺼둔 상태입니다. 이는 Apple 팀 서명 없이 ad-hoc 서명으로 직접 배포할 때
+  `flutter_secure_storage`의 키체인 접근(-34018 `errSecMissingEntitlement` 방지)과
+  dartssh2의 아웃바운드 접속을 허용하기 위함입니다. App Store에 올리려면 샌드박스를
+  다시 켜고 `keychain-access-groups`(팀 프리픽스 필요) + `network.client`를 추가해야
+  합니다.
 - **서명/공증:** Apple Developer 계정($99/년), Developer ID 인증서로 codesign 후
   `xcrun notarytool`로 공증(notarize) + `stapler`.
 - **App Store:** Xcode Organizer 또는 `xcrun altool`로 업로드.
