@@ -27,9 +27,12 @@ final packageInfoProvider = FutureProvider<PackageInfo>(
   (ref) => PackageInfo.fromPlatform(),
 );
 
-/// Checks for an available update. Returns null when no manifest URL is
-/// configured or the check fails (offline, unreachable) — the UI then simply
-/// shows nothing. Re-run with `ref.invalidate(updateCheckProvider)`.
+/// Checks for an available update. Returns null only when no manifest URL is
+/// configured (the check is disabled). Network/parse failures are allowed to
+/// propagate so the UI can surface them via the provider's error state —
+/// swallowing them here makes a failed check indistinguishable from "no update"
+/// and looks like the button does nothing. Re-run with
+/// `ref.invalidate(updateCheckProvider)`.
 final updateCheckProvider = FutureProvider<UpdateInfo?>((ref) async {
   final url = ref.watch(updateManifestUrlProvider);
   if (url.isEmpty) return null;
@@ -40,9 +43,5 @@ final updateCheckProvider = FutureProvider<UpdateInfo?>((ref) async {
     manifestUrl: Uri.parse(url),
     currentVersion: info.version,
   );
-  try {
-    return await service.check();
-  } catch (_) {
-    return null;
-  }
+  return service.check();
 });

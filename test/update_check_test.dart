@@ -64,12 +64,18 @@ void main() {
     expect(await c.read(updateCheckProvider.future), isNull);
   });
 
-  test('unreachable/failed manifest => graceful null', () async {
+  test('unreachable/failed manifest => error propagates (visible to UI)',
+      () async {
     final c = _container(
       currentVersion: '0.1.2',
       client: MockClient((_) async => http.Response('not found', 404)),
     );
     addTearDown(c.dispose);
-    expect(await c.read(updateCheckProvider.future), isNull);
+    // A failed check must surface as an error, not a silent null — otherwise
+    // the UI can't tell "no update" from "check failed".
+    expect(
+      c.read(updateCheckProvider.future),
+      throwsA(isA<http.ClientException>()),
+    );
   });
 }

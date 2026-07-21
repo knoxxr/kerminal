@@ -3,6 +3,15 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.1.8]
+
+### Fixed
+- **업데이트 확인이 반응 없던 문제** — 체크 실패 시 모든 예외를 삼켜 `null`로
+  바꾸던 탓에 성공/실패/최신 어떤 메시지도 안 떠 "먹지 않는" 것처럼 보였습니다.
+  이제 네트워크/파싱 실패가 UI 에러로 표면화됩니다("Update check failed: …").
+  (macOS에서 이전 샌드박스 빌드가 아웃바운드 네트워크를 막아 조용히 실패하던 것이
+  이 방식으로는 드러납니다. 네트워크 차단 자체는 0.1.6에서 해결됨.)
+
 ## [0.1.7]
 
 ### Fixed

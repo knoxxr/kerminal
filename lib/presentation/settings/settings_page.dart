@@ -283,7 +283,13 @@ class _UpdateSection extends ConsumerWidget {
         ),
         update.when(
           loading: () => const SizedBox.shrink(),
-          error: (_, _) => const Text('Update check failed.'),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Update check failed: $e',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
           data: (info) {
             if (info == null) return const SizedBox.shrink();
             if (!info.updateAvailable) {
