@@ -1,0 +1,11 @@
+# Normalize line endings; check out with LF on all platforms.
+* text=auto eol=lf
+
+# Binary assets — never normalize.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.keystore binary
