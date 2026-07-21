@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../application/known_hosts.dart';
+import '../../application/sessions.dart';
 import '../../domain/entities/ssh_connection_request.dart';
+import '../terminal/host_key_prompt.dart';
 
 /// Ad-hoc connection form. Lets the user connect to a server without saving it
-/// first — the primary entry point for exercising Phase 1. Saved-host support
-/// and credential storage arrive in Phase 2.
-class QuickConnectPage extends StatefulWidget {
+/// first. Opens the connection as a new terminal tab.
+class QuickConnectPage extends ConsumerStatefulWidget {
   const QuickConnectPage({this.prefill, super.key});
 
   final SshConnectionRequest? prefill;
 
   @override
-  State<QuickConnectPage> createState() => _QuickConnectPageState();
+  ConsumerState<QuickConnectPage> createState() => _QuickConnectPageState();
 }
 
-class _QuickConnectPageState extends State<QuickConnectPage> {
+class _QuickConnectPageState extends ConsumerState<QuickConnectPage> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _host;
@@ -61,7 +64,11 @@ class _QuickConnectPageState extends State<QuickConnectPage> {
       passphrase: _authKind == SshAuthKind.key ? _passphrase.text : null,
     );
 
-    context.pushNamed('terminal', extra: request);
+    ref.read(sessionsProvider.notifier).open(
+          request,
+          verifyHostKey: buildHostKeyVerifier(ref.read(knownHostsProvider)),
+        );
+    context.goNamed('terminal');
   }
 
   @override

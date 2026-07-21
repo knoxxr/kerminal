@@ -28,7 +28,10 @@ class SshTerminalController extends ChangeNotifier {
 
   /// Opens the connection described by [request] and streams it into
   /// [terminal]. Safe to call once; re-connecting requires a fresh controller.
-  Future<void> connect(SshConnectionRequest request) async {
+  Future<void> connect(
+    SshConnectionRequest request, {
+    HostKeyVerifier? verifyHostKey,
+  }) async {
     if (_status == SshConnectionStatus.connecting || isConnected) return;
 
     _setStatus(SshConnectionStatus.connecting);
@@ -38,6 +41,7 @@ class SshTerminalController extends ChangeNotifier {
       final session = await SshSession.connect(
         terminal: terminal,
         request: request,
+        verifyHostKey: verifyHostKey,
       );
       if (_disposed) {
         session.close();

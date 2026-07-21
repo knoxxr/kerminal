@@ -5,6 +5,15 @@ import 'package:xterm/xterm.dart';
 
 import '../../domain/entities/ssh_connection_request.dart';
 
+/// Verifies a server's host key. Returns true to accept the connection.
+/// [fingerprint] is the OpenSSH `SHA256:...` fingerprint of the host key.
+typedef HostKeyVerifier = Future<bool> Function(
+  String host,
+  int port,
+  String keyType,
+  String fingerprint,
+);
+
 /// A live SSH shell bound to an [xterm] [Terminal].
 ///
 /// [connect] establishes the transport, authenticates, opens a PTY-backed
@@ -23,6 +32,7 @@ class SshSession {
   static Future<SshSession> connect({
     required Terminal terminal,
     required SshConnectionRequest request,
+    HostKeyVerifier? verifyHostKey,
     Duration timeout = const Duration(seconds: 15),
   }) async {
     final socket = await SSHSocket.connect(
@@ -34,9 +44,16 @@ class SshSession {
     final client = SSHClient(
       socket,
       username: request.username,
-      // Phase 1: trust on first use. Real known_hosts verification with a user
-      // prompt is implemented in Phase 3.
-      onVerifyHostKey: (host, key) => true,
+      // dartssh2 passes (keyType, fingerprintBytes); the fingerprint is the
+      // OpenSSH "SHA256:..." string. Null verifier => trust on first use.
+      onVerifyHostKey: verifyHostKey == null
+          ? (type, fingerprint) => true
+          : (type, fingerprint) => verifyHostKey(
+                request.host,
+                request.port,
+                type,
+                utf8.decode(fingerprint),
+              ),
       identities: request.authKind == SshAuthKind.key
           ? SSHKeyPair.fromPem(
               request.privateKeyPem ?? '',

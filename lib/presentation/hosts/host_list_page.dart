@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../application/known_hosts.dart';
 import '../../application/providers.dart';
+import '../../application/sessions.dart';
 import '../../domain/entities/host.dart';
+import '../terminal/host_key_prompt.dart';
 
 /// Home screen: saved hosts grouped by folder, with search, quick connect, and
 /// per-host edit/delete. Tapping a host connects with one click using its
@@ -21,9 +24,11 @@ class _HostListPageState extends ConsumerState<HostListPage> {
   Future<void> _connect(Host host) async {
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
+    final verifier = buildHostKeyVerifier(ref.read(knownHostsProvider));
     try {
       final request = await ref.read(hostServiceProvider).buildRequest(host);
-      router.pushNamed('terminal', extra: request);
+      ref.read(sessionsProvider.notifier).open(request, verifyHostKey: verifier);
+      router.goNamed('terminal');
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Cannot connect: $e')));
     }
@@ -87,6 +92,11 @@ class _HostListPageState extends ConsumerState<HostListPage> {
             tooltip: 'Quick Connect',
             icon: const Icon(Icons.bolt),
             onPressed: () => context.pushNamed('connect'),
+          ),
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.pushNamed('settings'),
           ),
         ],
         bottom: PreferredSize(
