@@ -45,8 +45,14 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
 - **서명(현재):** 자체 서명 코드사이닝 인증서(`CN=SMIC`)로 CI에서 서명합니다.
   개인키(`.pfx`)는 GitHub Actions 시크릿 `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`,
   공개 인증서는 `windows/kerminal-codesign.cer`(릴리스에 동봉).
-  - **최종 사용자 설치:** `kerminal-codesign.cer`를 우클릭 → **인증서 설치 → 로컬 컴퓨터
-    → "신뢰할 수 있는 사람(Trusted People)"**에 저장한 뒤 `.msix` 실행. (최초 1회)
+  - **최종 사용자 설치 (최초 1회):** 자체 서명 인증서는 스스로가 루트이므로
+    **"신뢰할 수 있는 루트 인증 기관"**에 넣어야 `0x800B010A`가 사라집니다.
+    관리자 PowerShell에서:
+    ```powershell
+    Import-Certificate -FilePath .\kerminal-codesign.cer -CertStoreLocation Cert:\LocalMachine\Root
+    ```
+    그런 다음 `kerminal.msix` 실행 → 게시자가 "SMIC"로 확인되어 설치됩니다.
+    (GUI로는 .cer 우클릭 → 인증서 설치 → 로컬 컴퓨터 → "신뢰할 수 있는 루트 인증 기관".)
 - **정식 서명/스토어:** 상용 Authenticode(OV/EV) 인증서로 교체하거나 Microsoft Store
   제출(`dart run msix:create --store`, 파트너 센터 계정) 시 경고 없이 설치됩니다.
 
