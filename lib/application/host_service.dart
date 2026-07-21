@@ -1,6 +1,10 @@
+import 'dart:convert';
+
+import 'package:pointycastle/export.dart' show InvalidCipherTextException;
 import 'package:uuid/uuid.dart';
 
 import '../core/os_user.dart';
+import '../data/crypto/backup_crypto.dart';
 import '../data/vault/secure_vault.dart';
 import '../domain/entities/host.dart';
 import '../domain/entities/ssh_connection_request.dart';
@@ -106,5 +110,66 @@ class HostService {
     await _vault.deleteSecret(_pwKey(cid));
     await _vault.deleteSecret(_keyKey(cid));
     await _vault.deleteSecret(_passKey(cid));
+  }
+
+  // --- Encrypted backup / sharing ---
+
+  /// Bundles every host (metadata + secrets) and encrypts it with [passphrase].
+  /// The result is safe to share (e.g. via Google Drive): without the
+  /// passphrase it cannot be decrypted.
+  Future<String> exportEncrypted(String passphrase) async {
+    final hosts = await _repo.getHosts();
+    final items = <Map<String, dynamic>>[];
+    for (final h in hosts) {
+      final cid = h.credentialId;
+      final item = <String, dynamic>{
+        'label': h.label,
+        'hostname': h.hostname,
+        'port': h.port,
+        'username': h.username,
+        'group': h.groupName,
+        'authMethod': h.authMethod.name,
+      };
+      if (cid != null) {
+        if (h.authMethod == AuthMethod.password) {
+          item['password'] = await _vault.readSecret(_pwKey(cid));
+        } else {
+          item['privateKey'] = await _vault.readSecret(_keyKey(cid));
+          item['passphrase'] = await _vault.readSecret(_passKey(cid));
+        }
+      }
+      items.add(item);
+    }
+    final plaintext = jsonEncode({'version': 1, 'hosts': items});
+    return BackupCrypto.encrypt(plaintext, passphrase);
+  }
+
+  /// Imports hosts from an encrypted backup, adding them as new hosts (secrets
+  /// go to the vault). Returns the number imported. Throws
+  /// [BackupDecryptException] on a wrong passphrase / corrupt file.
+  Future<int> importEncrypted(String envelope, String passphrase) async {
+    final String plaintext;
+    try {
+      plaintext = BackupCrypto.decrypt(envelope, passphrase);
+    } on InvalidCipherTextException {
+      throw const BackupDecryptException();
+    }
+    final data = jsonDecode(plaintext) as Map<String, dynamic>;
+    final hosts = (data['hosts'] as List).cast<Map<String, dynamic>>();
+    for (final h in hosts) {
+      await saveHost(
+        label: h['label'] as String? ?? 'Imported',
+        hostname: h['hostname'] as String? ?? '',
+        port: (h['port'] as num?)?.toInt() ?? 22,
+        username: h['username'] as String? ?? '',
+        groupName: h['group'] as String?,
+        authMethod:
+            h['authMethod'] == 'sshKey' ? AuthMethod.sshKey : AuthMethod.password,
+        password: h['password'] as String?,
+        privateKeyPem: h['privateKey'] as String?,
+        passphrase: h['passphrase'] as String?,
+      );
+    }
+    return hosts.length;
   }
 }
