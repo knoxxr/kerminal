@@ -21,6 +21,7 @@ class HostListPage extends ConsumerStatefulWidget {
 
 class _HostListPageState extends ConsumerState<HostListPage> {
   String _query = '';
+  final Set<String> _collapsed = {};
 
   Future<void> _connect(Host host) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -139,21 +140,25 @@ class _HostListPageState extends ConsumerState<HostListPage> {
           return ListView(
             children: [
               for (final entry in grouped.entries) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-                  child: Text(
-                    entry.key.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
+                _GroupHeader(
+                  name: entry.key,
+                  count: entry.value.length,
+                  collapsed: _collapsed.contains(entry.key),
+                  onTap: () => setState(() {
+                    if (!_collapsed.remove(entry.key)) {
+                      _collapsed.add(entry.key);
+                    }
+                  }),
                 ),
-                for (final host in entry.value)
-                  _HostTile(
-                    host: host,
-                    onTap: () => _connect(host),
-                    onEdit: () =>
-                        context.pushNamed('editHost', extra: host),
-                    onDelete: () => _confirmDelete(host),
-                  ),
+                if (!_collapsed.contains(entry.key))
+                  for (final host in entry.value)
+                    _HostTile(
+                      host: host,
+                      onTap: () => _connect(host),
+                      onEdit: () =>
+                          context.pushNamed('editHost', extra: host),
+                      onDelete: () => _confirmDelete(host),
+                    ),
               ],
             ],
           );
@@ -162,6 +167,45 @@ class _HostListPageState extends ConsumerState<HostListPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.pushNamed('newHost'),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader({
+    required this.name,
+    required this.count,
+    required this.collapsed,
+    required this.onTap,
+  });
+
+  final String name;
+  final int count;
+  final bool collapsed;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 12, 16, 4),
+        child: Row(
+          children: [
+            Icon(
+              collapsed ? Icons.chevron_right : Icons.expand_more,
+              size: 20,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                '${name.toUpperCase()}  ($count)',
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
