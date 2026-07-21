@@ -101,11 +101,33 @@ flutter build web --release   # → build/web (정적 호스팅)
 
 ---
 
-## 자동 업데이트 (데스크톱)
-현재 미구현. 후보:
-- Windows: MSIX + Microsoft Store 자동 업데이트, 또는 App Installer(.appinstaller).
-- 크로스플랫폼: 정적 `latest.json`(버전/URL) 폴링 후 인앱 알림 → 다운로드 유도.
-MVP 범위 밖이며 별도 설계 단계에서 채택합니다.
+## 자동 업데이트 (버전 인식 + 다운로드 안내)
+앱은 원격 **버전 매니페스트(`latest.json`)**를 받아 현재 버전과 semver 비교 후,
+새 버전이 있으면 설정 화면과 호스트 목록(설정 아이콘 배지)에 알리고 플랫폼별
+다운로드 링크를 엽니다.
+
+**매니페스트 URL 지정** (빌드 시 `--dart-define`):
+```bash
+flutter build windows --dart-define=UPDATE_MANIFEST_URL=https://example.com/kominal/latest.json
+```
+URL이 비어 있으면 업데이트 체크는 비활성(아무것도 표시 안 함)입니다.
+
+**`latest.json` 형식** (정적 호스트/GitHub Releases 자산 등):
+```json
+{
+  "version": "0.2.0",
+  "notes": "변경 사항 요약",
+  "downloads": {
+    "windows": "https://example.com/kominal-0.2.0.msix",
+    "macos":   "https://example.com/kominal-0.2.0.dmg",
+    "linux":   "https://example.com/kominal-0.2.0.AppImage",
+    "android": "https://example.com/kominal-0.2.0.apk"
+  }
+}
+```
+릴리스마다 `pubspec.yaml` 버전을 올리고 이 매니페스트를 갱신하면, 구버전 앱이
+자동으로 새 버전을 인식합니다. (인앱 자동 설치는 스토어/서명 정책상 링크 안내
+방식이며, Windows는 MSIX Store 자동 업데이트로 확장 가능.)
 
 ## 릴리스 체크리스트
 - [ ] `pubspec.yaml` 버전/빌드번호 상향

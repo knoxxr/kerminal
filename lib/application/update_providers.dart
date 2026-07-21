@@ -1,0 +1,39 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
+
+import 'update_service.dart';
+
+/// Where the app looks for its release manifest. Replace with your real URL
+/// (e.g. a GitHub Releases asset or static host). See DEPLOY.md.
+const kUpdateManifestUrl =
+    String.fromEnvironment('UPDATE_MANIFEST_URL', defaultValue: '');
+
+final httpClientProvider = Provider<http.Client>((ref) {
+  final client = http.Client();
+  ref.onDispose(client.close);
+  return client;
+});
+
+final packageInfoProvider = FutureProvider<PackageInfo>(
+  (ref) => PackageInfo.fromPlatform(),
+);
+
+/// Checks for an available update. Returns null when no manifest URL is
+/// configured or the check fails (offline, unreachable) — the UI then simply
+/// shows nothing. Re-run with `ref.invalidate(updateCheckProvider)`.
+final updateCheckProvider = FutureProvider<UpdateInfo?>((ref) async {
+  if (kUpdateManifestUrl.isEmpty) return null;
+
+  final info = await ref.watch(packageInfoProvider.future);
+  final service = UpdateService(
+    client: ref.watch(httpClientProvider),
+    manifestUrl: Uri.parse(kUpdateManifestUrl),
+    currentVersion: info.version,
+  );
+  try {
+    return await service.check();
+  } catch (_) {
+    return null;
+  }
+});

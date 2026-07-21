@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../application/known_hosts.dart';
 import '../../application/providers.dart';
 import '../../application/sessions.dart';
+import '../../application/update_providers.dart';
 import '../../domain/entities/host.dart';
 import '../terminal/host_key_prompt.dart';
 
@@ -95,7 +96,12 @@ class _HostListPageState extends ConsumerState<HostListPage> {
           ),
           IconButton(
             tooltip: 'Settings',
-            icon: const Icon(Icons.settings_outlined),
+            icon: ref.watch(updateCheckProvider).maybeWhen(
+                  data: (info) => (info?.updateAvailable ?? false)
+                      ? const Badge(child: Icon(Icons.settings_outlined))
+                      : const Icon(Icons.settings_outlined),
+                  orElse: () => const Icon(Icons.settings_outlined),
+                ),
             onPressed: () => context.pushNamed('settings'),
           ),
         ],
