@@ -53,7 +53,11 @@ class UpdateService {
   final Duration timeout;
 
   Future<UpdateInfo> check() async {
-    final response = await client.get(manifestUrl).timeout(timeout);
+    // GitHub rejects requests without a User-Agent (HTTP 400), so set one.
+    final response = await client.get(
+      manifestUrl,
+      headers: const {'User-Agent': 'Kerminal-Updater', 'Accept': 'application/json'},
+    ).timeout(timeout);
     if (response.statusCode != 200) {
       throw http.ClientException(
         'Manifest fetch failed (${response.statusCode})',
