@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/account_providers.dart';
+import '../../application/providers.dart';
 
 /// Account screen: sign up / sign in, unlock with the encryption passphrase, and
 /// show the signed-in account. Cloud sync/sharing is layered on later phases.
@@ -238,6 +239,27 @@ class _SignedInView extends ConsumerWidget {
           subtitle: const Text('Signed in · encryption unlocked'),
         ),
         const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            final sync = ref.read(hostSyncServiceProvider);
+            if (sync == null) return;
+            messenger.showSnackBar(
+              const SnackBar(content: Text('Syncing…')),
+            );
+            try {
+              await sync.reconcile();
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Hosts synced.')),
+              );
+            } catch (e) {
+              messenger.showSnackBar(SnackBar(content: Text('Sync failed: $e')));
+            }
+          },
+          icon: const Icon(Icons.sync),
+          label: const Text('Sync hosts now'),
+        ),
+        const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: () =>
               ref.read(accountControllerProvider.notifier).signOut(),

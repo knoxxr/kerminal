@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../application/account_providers.dart';
 import '../../application/known_hosts.dart';
 import '../../application/providers.dart';
 import '../../application/sessions.dart';
@@ -56,6 +57,10 @@ class _HostListPageState extends ConsumerState<HostListPage> {
     );
     if (ok == true) {
       await ref.read(hostServiceProvider).deleteHost(host);
+      // Best-effort cloud soft-delete; local removal already happened.
+      try {
+        await ref.read(hostSyncServiceProvider)?.pushDelete(host.id);
+      } catch (_) {/* offline / locked */}
     }
   }
 
@@ -89,6 +94,15 @@ class _HostListPageState extends ConsumerState<HostListPage> {
   @override
   Widget build(BuildContext context) {
     final hosts = ref.watch(hostsProvider);
+
+    // When the account unlocks, pull cloud hosts and upload any local-only ones.
+    ref.listen(accountControllerProvider, (prev, next) {
+      final wasUnlocked = prev?.valueOrNull is AccountUnlocked;
+      final isUnlocked = next.valueOrNull is AccountUnlocked;
+      if (!wasUnlocked && isUnlocked) {
+        ref.read(hostSyncServiceProvider)?.reconcile().catchError((_) {});
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

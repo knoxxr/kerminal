@@ -71,7 +71,7 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await ref.read(hostServiceProvider).saveHost(
+      final saved = await ref.read(hostServiceProvider).saveHost(
             existing: widget.existing,
             label: _label.text.trim(),
             hostname: _host.text.trim(),
@@ -83,6 +83,10 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
             privateKeyPem: _privateKey.text,
             passphrase: _passphrase.text,
           );
+      // Best-effort end-to-end-encrypted upload; local save already succeeded.
+      try {
+        await ref.read(hostSyncServiceProvider)?.pushHost(saved);
+      } catch (_) {/* offline / locked — reconciled on next sync */}
       if (mounted) context.goNamed('hosts');
     } catch (e) {
       if (mounted) {
