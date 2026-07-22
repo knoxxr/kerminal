@@ -249,7 +249,7 @@ class _SignedInView extends ConsumerWidget {
             );
             try {
               final info = await sync.reconcile();
-              ref.read(shareInfoProvider.notifier).state = info;
+              ref.read(shareInfoProvider.notifier).set(info);
               messenger.showSnackBar(
                 const SnackBar(content: Text('Hosts synced.')),
               );

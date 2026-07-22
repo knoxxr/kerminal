@@ -40,9 +40,17 @@ final hostServiceProvider = Provider<HostService>(
 
 /// Per-host share info (owned/shared-in/shared-out), rebuilt on each reconcile.
 /// Drives the host-list labels. Empty until the first sync of a session.
-final shareInfoProvider = StateProvider<Map<String, HostShareInfo>>(
-  (ref) => const {},
-);
+class ShareInfoNotifier extends Notifier<Map<String, HostShareInfo>> {
+  @override
+  Map<String, HostShareInfo> build() => const {};
+
+  void set(Map<String, HostShareInfo> value) => state = value;
+}
+
+final shareInfoProvider =
+    NotifierProvider<ShareInfoNotifier, Map<String, HostShareInfo>>(
+      ShareInfoNotifier.new,
+    );
 
 /// End-to-end-encrypted host sync — non-null only when signed in and unlocked.
 /// UI treats null as "cloud unavailable / not unlocked" and simply skips sync.

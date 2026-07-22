@@ -111,7 +111,7 @@ class _HostListPageState extends ConsumerState<HostListPage> {
         final sync = ref.read(hostSyncServiceProvider);
         if (sync != null) {
           sync.reconcile().then((info) {
-            ref.read(shareInfoProvider.notifier).state = info;
+            ref.read(shareInfoProvider.notifier).set(info);
           }).catchError((_) {});
         }
       }
