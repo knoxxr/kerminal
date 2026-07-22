@@ -59,13 +59,23 @@ jobs:
           WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
           WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
         run: |
+          # Derive the 4-part MSIX version from pubspec's single source of truth
+          # (`version: X.Y.Z+B` -> `X.Y.Z.B`). The pubspec `msix_version` field is
+          # a stale fallback; passing --version here guarantees the package version
+          # increases each release so Windows performs an in-place update instead of
+          # rejecting a same-version/different-content package (0x80073CFB).
+          $raw = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+          $parts = $raw -split '\+'
+          $build = if ($parts.Count -gt 1) { $parts[1] } else { '0' }
+          $msixVer = "$($parts[0]).$build"
+          Write-Host "MSIX version: $msixVer (from pubspec '$raw')"
           if ($env:WINDOWS_CERT_BASE64) {
             $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
             [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64))
-            dart run msix:create --certificate-path $pfx --certificate-password $env:WINDOWS_CERT_PASSWORD
+            dart run msix:create --version $msixVer --certificate-path $pfx --certificate-password $env:WINDOWS_CERT_PASSWORD
           } else {
             Write-Host 'No signing secret; building with msix test certificate.'
-            dart run msix:create
+            dart run msix:create --version $msixVer
           }
       - if: matrix.target == 'windows'
         shell: pwsh

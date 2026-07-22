@@ -3,6 +3,15 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.1.9]
+
+### Fixed
+- **Windows MSIX 업데이트 불가(0x80073CFB) 해결** — `msix_version`이 `0.1.5.0`으로
+  하드코딩돼 있어 릴리스마다 패키지 버전이 동일했습니다. Windows는 "같은 버전인데
+  내용이 다름"으로 재설치를 거부했습니다. 이제 CI가 pubspec `version`에서 4자리
+  MSIX 버전(`X.Y.Z+B` → `X.Y.Z.B`)을 계산해 매 릴리스마다 증가시키므로 제자리
+  업데이트가 됩니다. (기존 설치본은 한 번 제거 후 재설치 필요.)
+
 ## [0.1.8]
 
 ### Fixed
