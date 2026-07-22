@@ -3,6 +3,15 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.1]
+
+### Added
+- **접속 리스트 클라우드 동기화 (P2)** — 로그인·잠금 해제 상태에서 호스트를
+  종단간 암호화해 Supabase에 업로드하고, 기기 간에 동기화합니다. 호스트마다 랜덤
+  콘텐츠 키로 암호화하고 그 키는 내 공개키로만 봉인되므로 서버는 평문을 볼 수
+  없습니다. 저장/삭제 시 자동 업로드, 잠금 해제 시 자동 내려받기, 계정 화면에서
+  "Sync hosts now"로 수동 동기화. (자격증명이 없는 빌드는 로컬 전용.)
+
 ## [0.2.0]
 
 ### Added
