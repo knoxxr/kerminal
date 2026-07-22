@@ -74,7 +74,7 @@ void main() {
     // Keep the provider alive while its async build settles, then assert it
     // surfaced an error rather than a silent null — otherwise the UI can't
     // tell "no update" from "check failed".
-    c.listen(updateCheckProvider, (_, __) {}, fireImmediately: true);
+    c.listen(updateCheckProvider, (_, _) {}, fireImmediately: true);
     await Future<void>.delayed(const Duration(milliseconds: 200));
 
     final state = c.read(updateCheckProvider);
