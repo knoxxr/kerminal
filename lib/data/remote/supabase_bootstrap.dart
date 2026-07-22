@@ -11,7 +11,9 @@ Future<bool> initSupabase() async {
   if (!SupabaseConfig.isConfigured) return false;
   await Supabase.initialize(
     url: SupabaseConfig.url,
-    anonKey: SupabaseConfig.anonKey,
+    // `publishableKey` is the current name for what older dashboards call the
+    // "anon public" key; both values are accepted here.
+    publishableKey: SupabaseConfig.anonKey,
   );
   return true;
 }
