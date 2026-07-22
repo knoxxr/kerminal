@@ -72,8 +72,9 @@ void main() {
     );
     addTearDown(c.dispose);
     // A failed check must surface as an error, not a silent null — otherwise
-    // the UI can't tell "no update" from "check failed".
-    expect(
+    // the UI can't tell "no update" from "check failed". Await so the future
+    // settles before the container is torn down.
+    await expectLater(
       c.read(updateCheckProvider.future),
       throwsA(isA<http.ClientException>()),
     );
