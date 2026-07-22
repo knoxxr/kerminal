@@ -28,6 +28,11 @@ jobs:
           - os: ubuntu-latest
             target: web
     runs-on: ${{ matrix.os }}
+    # Cloud credentials baked into the build via --dart-define (see each build
+    # step). Empty when the secrets are unset → the app runs local-only.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -69,13 +74,15 @@ jobs:
           $build = if ($parts.Count -gt 1) { $parts[1] } else { '0' }
           $msixVer = "$($parts[0]).$build"
           Write-Host "MSIX version: $msixVer (from pubspec '$raw')"
+          # Inject cloud credentials into the underlying `flutter build windows`.
+          $defs = "--dart-define=SUPABASE_URL=$($env:SUPABASE_URL) --dart-define=SUPABASE_ANON_KEY=$($env:SUPABASE_ANON_KEY)"
           if ($env:WINDOWS_CERT_BASE64) {
             $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
             [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64))
-            dart run msix:create --version $msixVer --certificate-path $pfx --certificate-password $env:WINDOWS_CERT_PASSWORD
+            dart run msix:create --version $msixVer --windows-build-args "$defs" --certificate-path $pfx --certificate-password $env:WINDOWS_CERT_PASSWORD
           } else {
             Write-Host 'No signing secret; building with msix test certificate.'
-            dart run msix:create --version $msixVer
+            dart run msix:create --version $msixVer --windows-build-args "$defs"
           }
       - if: matrix.target == 'windows'
         shell: pwsh
@@ -89,7 +96,9 @@ jobs:
       # --- macOS: .app bundle (zip). DMG needs signing/notarization (see DEPLOY.md) ---
       - if: matrix.target == 'macos'
         run: |
-          flutter build macos --release
+          flutter build macos --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
           mkdir -p dist
           cd build/macos/Build/Products/Release
           zip -r -y "$GITHUB_WORKSPACE/dist/kerminal-macos.zip" kerminal.app
@@ -97,15 +106,18 @@ jobs:
       # --- Linux: bundle tarball ---
       - if: matrix.target == 'linux'
         run: |
-          flutter build linux --release
+          flutter build linux --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
           mkdir -p dist
           tar -czf dist/kerminal-linux-x64.tar.gz -C build/linux/x64/release/bundle .
 
       # --- Android: APK + AAB (debug-signed unless key.properties provided) ---
       - if: matrix.target == 'android'
         run: |
-          flutter build apk --release
-          flutter build appbundle --release
+          DEFS="--dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
+          flutter build apk --release $DEFS
+          flutter build appbundle --release $DEFS
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk dist/kerminal.apk
           cp build/app/outputs/bundle/release/app-release.aab dist/kerminal.aab
@@ -113,7 +125,9 @@ jobs:
       # --- Web: static bundle ---
       - if: matrix.target == 'web'
         run: |
-          flutter build web --release
+          flutter build web --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
           mkdir -p dist
           tar -czf dist/kerminal-web.tar.gz -C build/web .
 

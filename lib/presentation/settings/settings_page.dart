@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../application/account_providers.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../data/crypto/backup_crypto.dart';
@@ -25,6 +27,11 @@ class SettingsPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Text('Account & Sync',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          const _AccountSection(),
+          const SizedBox(height: 28),
           Text('Appearance', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           SegmentedButton<ThemeMode>(
@@ -251,6 +258,56 @@ class _BackupSection extends ConsumerWidget {
 /// Shows the current version, a "check for updates" action, and — when the
 /// remote manifest advertises a newer version — a card with release notes and
 /// a download button.
+/// Compact account status + entry point to the full account screen.
+class _AccountSection extends ConsumerWidget {
+  const _AccountSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(accountControllerProvider);
+    final (title, subtitle, icon) = state.maybeWhen(
+      orElse: () => ('Account', 'Loading…', Icons.cloud_outlined),
+      data: (account) => switch (account) {
+        AccountCloudDisabled() => (
+            'Cloud not configured',
+            'This build has no sync credentials',
+            Icons.cloud_off_outlined,
+          ),
+        AccountSignedOut() => (
+            'Sign in to sync',
+            'Back up & share hosts across devices',
+            Icons.cloud_outlined,
+          ),
+        AccountLocked(:final email) => (
+            email,
+            'Locked — enter passphrase to unlock',
+            Icons.lock_outline,
+          ),
+        AccountUnlocked(:final identity) => (
+            identity.email,
+            'Signed in · encryption unlocked',
+            Icons.verified_user_outlined,
+          ),
+      },
+    );
+
+    final disabled = state.maybeWhen(
+      data: (a) => a is AccountCloudDisabled,
+      orElse: () => false,
+    );
+
+    return Card(
+      child: ListTile(
+        leading: Icon(icon),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: disabled ? null : const Icon(Icons.chevron_right),
+        onTap: disabled ? null : () => context.pushNamed('account'),
+      ),
+    );
+  }
+}
+
 class _UpdateSection extends ConsumerWidget {
   const _UpdateSection();
 

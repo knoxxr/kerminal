@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/host.dart';
 import '../../domain/entities/ssh_connection_request.dart';
+import '../../presentation/account/account_page.dart';
 import '../../presentation/connect/quick_connect_page.dart';
 import '../../presentation/hosts/add_edit_host_page.dart';
 import '../../presentation/hosts/host_list_page.dart';
@@ -44,6 +45,11 @@ final appRouter = GoRouter(
       path: '/settings',
       name: 'settings',
       builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/account',
+      name: 'account',
+      builder: (context, state) => const AccountPage(),
     ),
     GoRoute(
       path: '/terminal',
