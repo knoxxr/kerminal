@@ -84,9 +84,13 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
             passphrase: _passphrase.text,
           );
       // Best-effort end-to-end-encrypted upload; local save already succeeded.
-      try {
-        await ref.read(hostSyncServiceProvider)?.pushHost(saved);
-      } catch (_) {/* offline / locked — reconciled on next sync */}
+      // Skip hosts shared *to* me — those are the owner's to change (P4).
+      final ownedByMe = ref.read(shareInfoProvider)[saved.id]?.ownedByMe ?? true;
+      if (ownedByMe) {
+        try {
+          await ref.read(hostSyncServiceProvider)?.pushHost(saved);
+        } catch (_) {/* offline / locked — reconciled on next sync */}
+      }
       if (mounted) context.goNamed('hosts');
     } catch (e) {
       if (mounted) {

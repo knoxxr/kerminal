@@ -38,6 +38,12 @@ final hostServiceProvider = Provider<HostService>(
   ),
 );
 
+/// Per-host share info (owned/shared-in/shared-out), rebuilt on each reconcile.
+/// Drives the host-list labels. Empty until the first sync of a session.
+final shareInfoProvider = StateProvider<Map<String, HostShareInfo>>(
+  (ref) => const {},
+);
+
 /// End-to-end-encrypted host sync — non-null only when signed in and unlocked.
 /// UI treats null as "cloud unavailable / not unlocked" and simply skips sync.
 final hostSyncServiceProvider = Provider<HostSyncService?>((ref) {

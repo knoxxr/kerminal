@@ -7,8 +7,10 @@ import '../../application/known_hosts.dart';
 import '../../application/providers.dart';
 import '../../application/sessions.dart';
 import '../../application/update_providers.dart';
+import '../../data/remote/host_sync_service.dart';
 import '../../domain/entities/host.dart';
 import '../terminal/host_key_prompt.dart';
+import 'share_host_sheet.dart';
 
 /// Home screen: saved hosts grouped by folder, with search, quick connect, and
 /// per-host edit/delete. Tapping a host connects with one click using its
@@ -56,11 +58,16 @@ class _HostListPageState extends ConsumerState<HostListPage> {
       ),
     );
     if (ok == true) {
+      final ownedByMe =
+          ref.read(shareInfoProvider)[host.id]?.ownedByMe ?? true;
       await ref.read(hostServiceProvider).deleteHost(host);
-      // Best-effort cloud soft-delete; local removal already happened.
-      try {
-        await ref.read(hostSyncServiceProvider)?.pushDelete(host.id);
-      } catch (_) {/* offline / locked */}
+      // Best-effort cloud soft-delete; local removal already happened. Only the
+      // owner may delete server-side (shared-in hosts stay for other users).
+      if (ownedByMe) {
+        try {
+          await ref.read(hostSyncServiceProvider)?.pushDelete(host.id);
+        } catch (_) {/* offline / locked */}
+      }
     }
   }
 
@@ -94,13 +101,19 @@ class _HostListPageState extends ConsumerState<HostListPage> {
   @override
   Widget build(BuildContext context) {
     final hosts = ref.watch(hostsProvider);
+    final shareInfo = ref.watch(shareInfoProvider);
 
     // When the account unlocks, pull cloud hosts and upload any local-only ones.
     ref.listen(accountControllerProvider, (prev, next) {
       final wasUnlocked = prev?.asData?.value is AccountUnlocked;
       final isUnlocked = next.asData?.value is AccountUnlocked;
       if (!wasUnlocked && isUnlocked) {
-        ref.read(hostSyncServiceProvider)?.reconcile().catchError((_) {});
+        final sync = ref.read(hostSyncServiceProvider);
+        if (sync != null) {
+          sync.reconcile().then((info) {
+            ref.read(shareInfoProvider.notifier).state = info;
+          }).catchError((_) {});
+        }
       }
     });
 
@@ -168,10 +181,12 @@ class _HostListPageState extends ConsumerState<HostListPage> {
                   for (final host in entry.value)
                     _HostTile(
                       host: host,
+                      share: shareInfo[host.id],
                       onTap: () => _connect(host),
                       onEdit: () =>
                           context.pushNamed('editHost', extra: host),
                       onDelete: () => _confirmDelete(host),
+                      onShare: () => showShareHostSheet(context, host),
                     ),
               ],
             ],
@@ -181,6 +196,36 @@ class _HostListPageState extends ConsumerState<HostListPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.pushNamed('newHost'),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _ShareChip extends StatelessWidget {
+  const _ShareChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: scheme.onSecondaryContainer),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: scheme.onSecondaryContainer),
+          ),
+        ],
       ),
     );
   }
@@ -231,29 +276,62 @@ class _HostTile extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    required this.onShare,
+    this.share,
   });
 
   final Host host;
+  final HostShareInfo? share;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
+    final sharedIn = share != null && !share!.ownedByMe;
+    final subtitle = host.username.isEmpty
+        ? '${host.hostname}:${host.port}'
+        : '${host.username}@${host.hostname}:${host.port}';
+
     return ListTile(
       leading: Icon(
         host.authMethod == AuthMethod.sshKey ? Icons.key : Icons.dns_outlined,
       ),
-      title: Text(host.label),
-      subtitle: Text(host.username.isEmpty
-          ? '${host.hostname}:${host.port}'
-          : '${host.username}@${host.hostname}:${host.port}'),
+      title: Row(
+        children: [
+          Flexible(child: Text(host.label, overflow: TextOverflow.ellipsis)),
+          if (sharedIn) ...[
+            const SizedBox(width: 8),
+            _ShareChip(
+              icon: Icons.people_alt_outlined,
+              label: '공유받음 · ${share!.ownerEmail ?? '동료'}',
+            ),
+          ] else if (share?.sharedOut ?? false) ...[
+            const SizedBox(width: 8),
+            const _ShareChip(icon: Icons.ios_share, label: '공유함'),
+          ],
+        ],
+      ),
+      subtitle: Text(subtitle),
       onTap: onTap,
       trailing: PopupMenuButton<String>(
-        onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
-        itemBuilder: (context) => const [
-          PopupMenuItem(value: 'edit', child: Text('Edit')),
-          PopupMenuItem(value: 'delete', child: Text('Delete')),
+        onSelected: (v) {
+          switch (v) {
+            case 'edit':
+              onEdit();
+            case 'delete':
+              onDelete();
+            default:
+              onShare();
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(value: 'edit', child: Text('Edit')),
+          // Sharing is owner-only; shared-in hosts can't be re-shared.
+          if (!sharedIn)
+            const PopupMenuItem(value: 'share', child: Text('Share…')),
+          const PopupMenuItem(value: 'delete', child: Text('Delete')),
         ],
       ),
     );
