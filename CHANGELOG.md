@@ -3,6 +3,15 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.0]
+
+### Added
+- **계정 & 종단간 암호화 신원 (P1)** — Supabase 이메일/비밀번호 로그인과 계정별
+  X25519 키쌍. 개인키는 별도 패스프레이즈로 봉인해 저장하고, 잠금 해제 시에만
+  메모리에 올라갑니다. 설정 → Account & Sync에서 가입/로그인/잠금 해제.
+  (클라우드 동기화·공유는 다음 단계에서 이 신원 위에 얹습니다. 자격증명이 없는
+  빌드는 기존처럼 로컬 전용으로 동작합니다.)
+
 ## [0.1.9]
 
 ### Fixed
