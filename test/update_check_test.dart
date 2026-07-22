@@ -71,12 +71,14 @@ void main() {
       client: MockClient((_) async => http.Response('not found', 404)),
     );
     addTearDown(c.dispose);
-    // A failed check must surface as an error, not a silent null — otherwise
-    // the UI can't tell "no update" from "check failed". Await so the future
-    // settles before the container is torn down.
-    await expectLater(
-      c.read(updateCheckProvider.future),
-      throwsA(isA<http.ClientException>()),
-    );
+    // Keep the provider alive while its async build settles, then assert it
+    // surfaced an error rather than a silent null — otherwise the UI can't
+    // tell "no update" from "check failed".
+    c.listen(updateCheckProvider, (_, __) {}, fireImmediately: true);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+
+    final state = c.read(updateCheckProvider);
+    expect(state.hasError, isTrue);
+    expect(state.error, isA<http.ClientException>());
   });
 }
