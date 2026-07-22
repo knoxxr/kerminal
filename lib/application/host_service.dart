@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../core/os_user.dart';
 import '../data/crypto/backup_crypto.dart';
+import '../data/crypto/host_codec.dart';
 import '../data/vault/secure_vault.dart';
 import '../domain/entities/host.dart';
 import '../domain/entities/ssh_connection_request.dart';
@@ -110,6 +111,71 @@ class HostService {
     await _vault.deleteSecret(_pwKey(cid));
     await _vault.deleteSecret(_keyKey(cid));
     await _vault.deleteSecret(_passKey(cid));
+  }
+
+  // --- Cloud sync helpers (used by HostSyncService) ---
+
+  /// Reads a host's full plaintext (metadata + secrets from the vault) into a
+  /// [HostPayload] for end-to-end-encrypted upload. Never persisted as-is.
+  Future<HostPayload> readPayload(Host host) async {
+    final cid = host.credentialId;
+    String? password, privateKeyPem, passphrase;
+    if (cid != null) {
+      if (host.authMethod == AuthMethod.password) {
+        password = await _vault.readSecret(_pwKey(cid));
+      } else {
+        privateKeyPem = await _vault.readSecret(_keyKey(cid));
+        passphrase = await _vault.readSecret(_passKey(cid));
+      }
+    }
+    return HostPayload(
+      label: host.label,
+      hostname: host.hostname,
+      port: host.port,
+      username: host.username,
+      authMethod: host.authMethod,
+      groupName: host.groupName,
+      password: password,
+      privateKeyPem: privateKeyPem,
+      passphrase: passphrase,
+    );
+  }
+
+  /// Writes a host decrypted from the cloud into local storage under the given
+  /// cloud [id] (metadata to the repo, secrets to the vault). Purely local — it
+  /// does not push anything back.
+  Future<void> applyRemote(String id, HostPayload p) async {
+    await _clearSecrets(id);
+    if (p.authMethod == AuthMethod.password) {
+      if (p.password?.isNotEmpty ?? false) {
+        await _vault.writeSecret(_pwKey(id), p.password!);
+      }
+    } else {
+      if (p.privateKeyPem?.isNotEmpty ?? false) {
+        await _vault.writeSecret(_keyKey(id), p.privateKeyPem!);
+      }
+      if (p.passphrase?.isNotEmpty ?? false) {
+        await _vault.writeSecret(_passKey(id), p.passphrase!);
+      }
+    }
+    await _repo.upsertHost(
+      Host(
+        id: id,
+        label: p.label,
+        hostname: p.hostname,
+        port: p.port,
+        username: p.username,
+        authMethod: p.authMethod,
+        groupName: p.groupName,
+        credentialId: id,
+      ),
+    );
+  }
+
+  /// Removes a host locally by id (used when the cloud says it was deleted).
+  Future<void> deleteLocalById(String id) async {
+    final host = await _repo.getHost(id);
+    if (host != null) await deleteHost(host);
   }
 
   // --- Encrypted backup / sharing ---
