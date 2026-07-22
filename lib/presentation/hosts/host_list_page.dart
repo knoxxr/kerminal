@@ -97,8 +97,8 @@ class _HostListPageState extends ConsumerState<HostListPage> {
 
     // When the account unlocks, pull cloud hosts and upload any local-only ones.
     ref.listen(accountControllerProvider, (prev, next) {
-      final wasUnlocked = prev?.valueOrNull is AccountUnlocked;
-      final isUnlocked = next.valueOrNull is AccountUnlocked;
+      final wasUnlocked = prev?.asData?.value is AccountUnlocked;
+      final isUnlocked = next.asData?.value is AccountUnlocked;
       if (!wasUnlocked && isUnlocked) {
         ref.read(hostSyncServiceProvider)?.reconcile().catchError((_) {});
       }

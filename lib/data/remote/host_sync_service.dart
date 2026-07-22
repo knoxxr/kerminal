@@ -18,15 +18,7 @@ import '../crypto/symmetric_crypto.dart';
 /// persisted locally — it is re-derived by unsealing on pull. Requires an
 /// unlocked [AccountIdentity].
 class HostSyncService {
-  HostSyncService({
-    required SupabaseClient client,
-    required HostService hostService,
-    required HostRepository repo,
-    required AccountIdentity identity,
-  }) : _client = client,
-       _hosts = hostService,
-       _repo = repo,
-       _identity = identity;
+  HostSyncService(this._client, this._hosts, this._repo, this._identity);
 
   final SupabaseClient _client;
   final HostService _hosts;

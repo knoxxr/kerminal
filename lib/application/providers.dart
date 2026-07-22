@@ -42,13 +42,13 @@ final hostServiceProvider = Provider<HostService>(
 /// UI treats null as "cloud unavailable / not unlocked" and simply skips sync.
 final hostSyncServiceProvider = Provider<HostSyncService?>((ref) {
   final client = ref.watch(supabaseClientProvider);
-  final account = ref.watch(accountControllerProvider).valueOrNull;
+  final account = ref.watch(accountControllerProvider).asData?.value;
   if (client == null || account is! AccountUnlocked) return null;
   return HostSyncService(
-    client: client,
-    hostService: ref.watch(hostServiceProvider),
-    repo: ref.watch(hostRepositoryProvider),
-    identity: account.identity,
+    client,
+    ref.watch(hostServiceProvider),
+    ref.watch(hostRepositoryProvider),
+    account.identity,
   );
 });
 
