@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../application/account_providers.dart';
 import '../../application/known_hosts.dart';
 import '../../application/providers.dart';
 import '../../application/sessions.dart';
@@ -71,6 +70,31 @@ class _HostListPageState extends ConsumerState<HostListPage> {
     }
   }
 
+  /// Duplicates a host into my own list. Used to make an editable copy of a
+  /// read-only shared host (the copy is mine — I can edit and re-share it).
+  Future<void> _copyHost(Host host) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final svc = ref.read(hostServiceProvider);
+    final p = await svc.readPayload(host);
+    final saved = await svc.saveHost(
+      label: '${host.label} (copy)',
+      hostname: p.hostname,
+      port: p.port,
+      username: p.username,
+      groupName: host.groupName,
+      authMethod: p.authMethod,
+      password: p.password,
+      privateKeyPem: p.privateKeyPem,
+      passphrase: p.passphrase,
+    );
+    try {
+      await ref.read(hostSyncServiceProvider)?.pushHost(saved);
+    } catch (_) {/* offline / locked — reconciled on next sync */}
+    messenger.showSnackBar(
+      SnackBar(content: Text('"${saved.label}" 를 내 목록으로 복사했습니다.')),
+    );
+  }
+
   String _groupOf(Host h) =>
       (h.groupName?.isNotEmpty ?? false) ? h.groupName! : kDefaultGroup;
 
@@ -103,19 +127,9 @@ class _HostListPageState extends ConsumerState<HostListPage> {
     final hosts = ref.watch(hostsProvider);
     final shareInfo = ref.watch(shareInfoProvider);
 
-    // When the account unlocks, pull cloud hosts and upload any local-only ones.
-    ref.listen(accountControllerProvider, (prev, next) {
-      final wasUnlocked = prev?.asData?.value is AccountUnlocked;
-      final isUnlocked = next.asData?.value is AccountUnlocked;
-      if (!wasUnlocked && isUnlocked) {
-        final sync = ref.read(hostSyncServiceProvider);
-        if (sync != null) {
-          sync.reconcile().then((info) {
-            ref.read(shareInfoProvider.notifier).set(info);
-          }).catchError((_) {});
-        }
-      }
-    });
+    // Keep realtime sync alive while signed in + unlocked (pull + labels
+    // refresh automatically on any change).
+    ref.watch(syncRealtimeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -187,6 +201,7 @@ class _HostListPageState extends ConsumerState<HostListPage> {
                           context.pushNamed('editHost', extra: host),
                       onDelete: () => _confirmDelete(host),
                       onShare: () => showShareHostSheet(context, host),
+                      onCopy: () => _copyHost(host),
                     ),
               ],
             ],
@@ -277,6 +292,7 @@ class _HostTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onShare,
+    required this.onCopy,
     this.share,
   });
 
@@ -286,6 +302,7 @@ class _HostTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onShare;
+  final VoidCallback onCopy;
 
   @override
   Widget build(BuildContext context) {
@@ -320,19 +337,24 @@ class _HostTile extends StatelessWidget {
           switch (v) {
             case 'edit':
               onEdit();
-            case 'delete':
-              onDelete();
-            default:
+            case 'share':
               onShare();
+            case 'copy':
+              onCopy();
+            default:
+              onDelete();
           }
         },
-        itemBuilder: (context) => [
-          const PopupMenuItem(value: 'edit', child: Text('Edit')),
-          // Sharing is owner-only; shared-in hosts can't be re-shared.
-          if (!sharedIn)
-            const PopupMenuItem(value: 'share', child: Text('Share…')),
-          const PopupMenuItem(value: 'delete', child: Text('Delete')),
-        ],
+        // A host shared *to* me is read-only: I can copy it into my own list
+        // (then edit the copy freely) but can't change or re-share the original.
+        itemBuilder: (context) => sharedIn
+            ? const [PopupMenuItem(value: 'copy', child: Text('내 목록으로 복사'))]
+            : const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'share', child: Text('Share…')),
+                PopupMenuItem(value: 'copy', child: Text('Duplicate')),
+                PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
       ),
     );
   }

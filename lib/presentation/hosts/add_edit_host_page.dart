@@ -84,7 +84,8 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
             passphrase: _passphrase.text,
           );
       // Best-effort end-to-end-encrypted upload; local save already succeeded.
-      // Skip hosts shared *to* me — those are the owner's to change (P4).
+      // Only owned hosts sync — shared-in hosts are read-only (copy to edit),
+      // so this path only ever runs for hosts I own.
       final ownedByMe = ref.read(shareInfoProvider)[saved.id]?.ownedByMe ?? true;
       if (ownedByMe) {
         try {

@@ -52,6 +52,23 @@ final shareInfoProvider =
       ShareInfoNotifier.new,
     );
 
+/// Keeps sync live: subscribes to realtime changes while signed in + unlocked,
+/// refreshing local hosts and share labels on any event. Watch it from a
+/// long-lived widget (the host list) to keep it alive.
+final syncRealtimeProvider = Provider<void>((ref) {
+  final sync = ref.watch(hostSyncServiceProvider);
+  if (sync == null) return;
+  Future<void> refresh() async {
+    try {
+      ref.read(shareInfoProvider.notifier).set(await sync.reconcile());
+    } catch (_) {/* offline / transient */}
+  }
+
+  final channel = sync.subscribe(refresh);
+  refresh();
+  ref.onDispose(() => channel.unsubscribe());
+});
+
 /// End-to-end-encrypted host sync — non-null only when signed in and unlocked.
 /// UI treats null as "cloud unavailable / not unlocked" and simply skips sync.
 final hostSyncServiceProvider = Provider<HostSyncService?>((ref) {

@@ -220,4 +220,28 @@ class HostSyncService {
 
     return info;
   }
+
+  // --- Realtime ---
+
+  /// Subscribes to host/sharing changes; [onChange] fires on any relevant event
+  /// (another of my devices, or a host newly shared with me). Caller must
+  /// unsubscribe.
+  RealtimeChannel subscribe(void Function() onChange) {
+    final channel = _client.channel('kerminal-sync');
+    channel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'hosts',
+          callback: (_) => onChange(),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'host_keys',
+          callback: (_) => onChange(),
+        )
+        .subscribe();
+    return channel;
+  }
 }
