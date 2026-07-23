@@ -65,13 +65,20 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              itemCount: sessions.length,
-              itemBuilder: (context, i) => _Tab(
-                session: sessions[i],
-                selected: i == index,
-                onTap: () => setState(() => _index = i),
-                onClose: () => _close(sessions[i].id, sessions.length),
-              ),
+              // First slot is a Home tab that returns to the host list.
+              itemCount: sessions.length + 1,
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  return _HomeTab(onTap: () => context.goNamed('hosts'));
+                }
+                final s = i - 1;
+                return _Tab(
+                  session: sessions[s],
+                  selected: s == index,
+                  onTap: () => setState(() => _index = s),
+                  onClose: () => _close(sessions[s].id, sessions.length),
+                );
+              },
             ),
           ),
         ),
@@ -93,6 +100,41 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
     } else {
       setState(() => _index = _index.clamp(0, count - 2));
     }
+  }
+}
+
+class _HomeTab extends StatelessWidget {
+  const _HomeTab({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Material(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.home_outlined,
+                    size: 18, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text('Home',
+                    style: TextStyle(color: scheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
