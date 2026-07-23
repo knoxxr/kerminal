@@ -81,7 +81,11 @@ class HostSyncService {
   final HostRepository _repo;
   final AccountIdentity _identity;
 
-  String get _me => _identity.userId;
+  // The id of the *live* signed-in user — exactly what the server sees as
+  // auth.uid() for our requests. Used for owner_id / recipient_id and ownership
+  // filters so the hosts RLS check `owner_id = auth.uid()` always matches, even
+  // if the captured [AccountIdentity] ever drifts from the active session.
+  String get _me => _client.auth.currentUser?.id ?? _identity.userId;
 
   /// Recovers a host's content key by unsealing the owner/recipient row that
   /// belongs to me, or null when I have no key row yet (host not synced).
