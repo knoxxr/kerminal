@@ -52,6 +52,39 @@ final shareInfoProvider =
       ShareInfoNotifier.new,
     );
 
+/// Pending edit proposals by colleagues on hosts I own (P4).
+class PendingProposalsNotifier extends Notifier<List<HostProposal>> {
+  @override
+  List<HostProposal> build() => const [];
+
+  void set(List<HostProposal> value) => state = value;
+}
+
+final pendingProposalsProvider =
+    NotifierProvider<PendingProposalsNotifier, List<HostProposal>>(
+      PendingProposalsNotifier.new,
+    );
+
+/// Keeps sync live: subscribes to realtime changes while signed in + unlocked,
+/// refreshing local hosts, share labels, and pending proposals on any event.
+/// Watch it from a long-lived widget (the host list) to keep it alive.
+final syncRealtimeProvider = Provider<void>((ref) {
+  final sync = ref.watch(hostSyncServiceProvider);
+  if (sync == null) return;
+  Future<void> refresh() async {
+    try {
+      ref.read(shareInfoProvider.notifier).set(await sync.reconcile());
+      ref
+          .read(pendingProposalsProvider.notifier)
+          .set(await sync.fetchProposals());
+    } catch (_) {/* offline / transient */}
+  }
+
+  final channel = sync.subscribe(refresh);
+  refresh();
+  ref.onDispose(() => channel.unsubscribe());
+});
+
 /// End-to-end-encrypted host sync — non-null only when signed in and unlocked.
 /// UI treats null as "cloud unavailable / not unlocked" and simply skips sync.
 final hostSyncServiceProvider = Provider<HostSyncService?>((ref) {

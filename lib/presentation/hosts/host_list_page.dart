@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../application/account_providers.dart';
 import '../../application/known_hosts.dart';
 import '../../application/providers.dart';
 import '../../application/sessions.dart';
@@ -10,6 +9,7 @@ import '../../application/update_providers.dart';
 import '../../data/remote/host_sync_service.dart';
 import '../../domain/entities/host.dart';
 import '../terminal/host_key_prompt.dart';
+import 'proposals_sheet.dart';
 import 'share_host_sheet.dart';
 
 /// Home screen: saved hosts grouped by folder, with search, quick connect, and
@@ -102,20 +102,11 @@ class _HostListPageState extends ConsumerState<HostListPage> {
   Widget build(BuildContext context) {
     final hosts = ref.watch(hostsProvider);
     final shareInfo = ref.watch(shareInfoProvider);
+    final proposals = ref.watch(pendingProposalsProvider);
 
-    // When the account unlocks, pull cloud hosts and upload any local-only ones.
-    ref.listen(accountControllerProvider, (prev, next) {
-      final wasUnlocked = prev?.asData?.value is AccountUnlocked;
-      final isUnlocked = next.asData?.value is AccountUnlocked;
-      if (!wasUnlocked && isUnlocked) {
-        final sync = ref.read(hostSyncServiceProvider);
-        if (sync != null) {
-          sync.reconcile().then((info) {
-            ref.read(shareInfoProvider.notifier).set(info);
-          }).catchError((_) {});
-        }
-      }
-    });
+    // Keep realtime sync alive while signed in + unlocked (pull, labels,
+    // proposals refresh automatically).
+    ref.watch(syncRealtimeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -166,6 +157,11 @@ class _HostListPageState extends ConsumerState<HostListPage> {
           }
           return ListView(
             children: [
+              if (proposals.isNotEmpty)
+                _ProposalsBanner(
+                  count: proposals.length,
+                  onReview: () => showProposalsSheet(context, proposals),
+                ),
               for (final entry in grouped.entries) ...[
                 _GroupHeader(
                   name: entry.key,
@@ -196,6 +192,33 @@ class _HostListPageState extends ConsumerState<HostListPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.pushNamed('newHost'),
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class _ProposalsBanner extends StatelessWidget {
+  const _ProposalsBanner({required this.count, required this.onReview});
+
+  final int count;
+  final VoidCallback onReview;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.tertiaryContainer,
+      child: ListTile(
+        leading: Icon(Icons.sync_problem, color: scheme.onTertiaryContainer),
+        title: Text(
+          '동료가 $count건의 수정을 제안했습니다',
+          style: TextStyle(color: scheme.onTertiaryContainer),
+        ),
+        subtitle: Text(
+          '동기화할지 검토하세요',
+          style: TextStyle(color: scheme.onTertiaryContainer),
+        ),
+        trailing: FilledButton(onPressed: onReview, child: const Text('검토')),
       ),
     );
   }

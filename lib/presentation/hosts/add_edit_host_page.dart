@@ -83,15 +83,27 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
             privateKeyPem: _privateKey.text,
             passphrase: _passphrase.text,
           );
-      // Best-effort end-to-end-encrypted upload; local save already succeeded.
-      // Skip hosts shared *to* me — those are the owner's to change (P4).
-      final ownedByMe = ref.read(shareInfoProvider)[saved.id]?.ownedByMe ?? true;
-      if (ownedByMe) {
-        try {
-          await ref.read(hostSyncServiceProvider)?.pushHost(saved);
-        } catch (_) {/* offline / locked — reconciled on next sync */}
+      // Best-effort cloud sync; local save already succeeded. A host shared
+      // *to* me isn't mine to change directly — send it as a proposal the owner
+      // can accept; otherwise upload the change.
+      final info = ref.read(shareInfoProvider)[saved.id];
+      final sync = ref.read(hostSyncServiceProvider);
+      final proposed = info != null && !info.ownedByMe;
+      try {
+        if (proposed) {
+          await sync?.proposeEdit(saved);
+        } else {
+          await sync?.pushHost(saved);
+        }
+      } catch (_) {/* offline / locked — reconciled on next sync */}
+      if (mounted) {
+        if (proposed) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('수정 제안을 보냈습니다. 소유자 승인 후 반영됩니다.')),
+          );
+        }
+        context.goNamed('hosts');
       }
-      if (mounted) context.goNamed('hosts');
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
