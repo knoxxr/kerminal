@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.7]
+
+### Fixed
+- **동기화 42501 최종 해결** — 클라우드 업로드에 upsert 대신 신규는 INSERT, 기존은
+  UPDATE를 사용하도록 변경. PostgREST의 upsert가 RLS WITH CHECK 평가에 걸리던
+  문제를 우회합니다(서버 측 추가 설정 불필요).
+
 ## [0.2.6]
 
 ### Fixed
