@@ -112,9 +112,11 @@ class HostSyncService {
     final contentKey = existing ?? SymmetricCrypto.randomKey();
     final ciphertext = HostCodec.encrypt(payload, contentKey);
 
+    // owner_id is omitted on purpose: the DB defaults it to auth.uid(), so it
+    // always matches the session that RLS checks — the client can't get it
+    // wrong. On update (conflict) the existing owner_id is left unchanged.
     await _client.from('hosts').upsert({
       'id': host.id,
-      'owner_id': _me,
       'ciphertext': ciphertext,
       'deleted': false,
     });

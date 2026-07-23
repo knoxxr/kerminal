@@ -47,7 +47,9 @@ create table if not exists public.account_keys (
 -- =============================================================================
 create table if not exists public.hosts (
   id         uuid primary key default gen_random_uuid(),
-  owner_id   uuid not null references auth.users (id) on delete cascade,
+  -- Defaults to the caller's uid so the client never has to send it (and can't
+  -- get it wrong); the RLS check below still enforces owner_id = auth.uid().
+  owner_id   uuid not null default auth.uid() references auth.users (id) on delete cascade,
   ciphertext text not null,              -- AES-256-GCM envelope of host JSON
   version    integer not null default 1, -- app-managed, monotonic per host
   deleted    boolean not null default false,
