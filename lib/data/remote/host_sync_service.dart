@@ -31,23 +31,6 @@ class HostShareInfo {
   final bool sharedOut;
 }
 
-/// A pending edit a colleague proposed to a host I own, awaiting my decision.
-class HostProposal {
-  const HostProposal({
-    required this.versionId,
-    required this.hostId,
-    required this.hostLabel,
-    required this.editorEmail,
-    required this.ciphertext,
-  });
-
-  final String versionId;
-  final String hostId;
-  final String hostLabel;
-  final String editorEmail;
-  final String ciphertext;
-}
-
 /// End-to-end-encrypted sync + sharing of hosts.
 ///
 /// A host is encrypted with a stable per-host content key; that key is sealed
@@ -238,102 +221,11 @@ class HostSyncService {
     return info;
   }
 
-  // --- Collaborative edits (P4) ---
+  // --- Realtime ---
 
-  /// A colleague (sharee) proposes an edit to a host they don't own. The
-  /// canonical row is untouched; the owner decides whether to apply it.
-  Future<void> proposeEdit(Host host) async {
-    final contentKey = await _contentKeyFor(host.id);
-    if (contentKey == null) throw StateError('No access key for this host.');
-    final ciphertext = HostCodec.encrypt(await _hosts.readPayload(host), contentKey);
-    final maxRow = await _client
-        .from('host_versions')
-        .select('version')
-        .eq('host_id', host.id)
-        .order('version', ascending: false)
-        .limit(1)
-        .maybeSingle();
-    final next = ((maxRow?['version'] as int?) ?? 0) + 1;
-    await _client.from('host_versions').insert({
-      'host_id': host.id,
-      'version': next,
-      'editor_id': _me,
-      'op': 'update',
-      'ciphertext': ciphertext,
-      'status': 'proposed',
-    });
-  }
-
-  /// Pending edit proposals by colleagues on hosts I own (excludes my own).
-  Future<List<HostProposal>> fetchProposals() async {
-    final versions = await _client
-        .from('host_versions')
-        .select('id, host_id, editor_id, ciphertext')
-        .eq('status', 'proposed')
-        .neq('editor_id', _me);
-    if (versions.isEmpty) return const [];
-
-    final ownedRows = await _client.from('hosts').select('id').eq('owner_id', _me);
-    final ownedIds = {for (final r in ownedRows) r['id'] as String};
-
-    final editorIds = {for (final v in versions) v['editor_id'] as String};
-    final profs = await _client
-        .from('profiles')
-        .select('id, email')
-        .inFilter('id', editorIds.toList());
-    final email = {for (final p in profs) p['id'] as String: p['email'] as String};
-
-    final result = <HostProposal>[];
-    for (final v in versions) {
-      final hostId = v['host_id'] as String;
-      if (!ownedIds.contains(hostId)) continue;
-      final contentKey = await _contentKeyFor(hostId);
-      if (contentKey == null) continue;
-      final ciphertext = v['ciphertext'] as String? ?? '';
-      var label = '(host)';
-      if (ciphertext.isNotEmpty) {
-        try {
-          label = HostCodec.decrypt(ciphertext, contentKey).label;
-        } catch (_) {/* keep placeholder */}
-      }
-      result.add(
-        HostProposal(
-          versionId: v['id'] as String,
-          hostId: hostId,
-          hostLabel: label,
-          editorEmail: email[v['editor_id'] as String] ?? '동료',
-          ciphertext: ciphertext,
-        ),
-      );
-    }
-    return result;
-  }
-
-  /// Applies a proposal to the canonical host and marks it applied.
-  Future<void> acceptProposal(HostProposal p) async {
-    await _client
-        .from('hosts')
-        .update({'ciphertext': p.ciphertext, 'deleted': false})
-        .eq('id', p.hostId);
-    await _client
-        .from('host_versions')
-        .update({'status': 'applied'})
-        .eq('id', p.versionId);
-    final contentKey = await _contentKeyFor(p.hostId);
-    if (contentKey != null && p.ciphertext.isNotEmpty) {
-      await _hosts.applyRemote(p.hostId, HostCodec.decrypt(p.ciphertext, contentKey));
-    }
-  }
-
-  Future<void> rejectProposal(String versionId) async {
-    await _client
-        .from('host_versions')
-        .update({'status': 'rejected'})
-        .eq('id', versionId);
-  }
-
-  /// Subscribes to host/version changes; [onChange] fires on any relevant event
-  /// (another device or a colleague's proposal). Caller must unsubscribe.
+  /// Subscribes to host/sharing changes; [onChange] fires on any relevant event
+  /// (another of my devices, or a host newly shared with me). Caller must
+  /// unsubscribe.
   RealtimeChannel subscribe(void Function() onChange) {
     final channel = _client.channel('kerminal-sync');
     channel
@@ -346,7 +238,7 @@ class HostSyncService {
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
           schema: 'public',
-          table: 'host_versions',
+          table: 'host_keys',
           callback: (_) => onChange(),
         )
         .subscribe();

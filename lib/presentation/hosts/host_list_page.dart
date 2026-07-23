@@ -9,7 +9,6 @@ import '../../application/update_providers.dart';
 import '../../data/remote/host_sync_service.dart';
 import '../../domain/entities/host.dart';
 import '../terminal/host_key_prompt.dart';
-import 'proposals_sheet.dart';
 import 'share_host_sheet.dart';
 
 /// Home screen: saved hosts grouped by folder, with search, quick connect, and
@@ -71,6 +70,31 @@ class _HostListPageState extends ConsumerState<HostListPage> {
     }
   }
 
+  /// Duplicates a host into my own list. Used to make an editable copy of a
+  /// read-only shared host (the copy is mine — I can edit and re-share it).
+  Future<void> _copyHost(Host host) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final svc = ref.read(hostServiceProvider);
+    final p = await svc.readPayload(host);
+    final saved = await svc.saveHost(
+      label: '${host.label} (copy)',
+      hostname: p.hostname,
+      port: p.port,
+      username: p.username,
+      groupName: host.groupName,
+      authMethod: p.authMethod,
+      password: p.password,
+      privateKeyPem: p.privateKeyPem,
+      passphrase: p.passphrase,
+    );
+    try {
+      await ref.read(hostSyncServiceProvider)?.pushHost(saved);
+    } catch (_) {/* offline / locked — reconciled on next sync */}
+    messenger.showSnackBar(
+      SnackBar(content: Text('"${saved.label}" 를 내 목록으로 복사했습니다.')),
+    );
+  }
+
   String _groupOf(Host h) =>
       (h.groupName?.isNotEmpty ?? false) ? h.groupName! : kDefaultGroup;
 
@@ -102,10 +126,9 @@ class _HostListPageState extends ConsumerState<HostListPage> {
   Widget build(BuildContext context) {
     final hosts = ref.watch(hostsProvider);
     final shareInfo = ref.watch(shareInfoProvider);
-    final proposals = ref.watch(pendingProposalsProvider);
 
-    // Keep realtime sync alive while signed in + unlocked (pull, labels,
-    // proposals refresh automatically).
+    // Keep realtime sync alive while signed in + unlocked (pull + labels
+    // refresh automatically on any change).
     ref.watch(syncRealtimeProvider);
 
     return Scaffold(
@@ -157,11 +180,6 @@ class _HostListPageState extends ConsumerState<HostListPage> {
           }
           return ListView(
             children: [
-              if (proposals.isNotEmpty)
-                _ProposalsBanner(
-                  count: proposals.length,
-                  onReview: () => showProposalsSheet(context, proposals),
-                ),
               for (final entry in grouped.entries) ...[
                 _GroupHeader(
                   name: entry.key,
@@ -183,6 +201,7 @@ class _HostListPageState extends ConsumerState<HostListPage> {
                           context.pushNamed('editHost', extra: host),
                       onDelete: () => _confirmDelete(host),
                       onShare: () => showShareHostSheet(context, host),
+                      onCopy: () => _copyHost(host),
                     ),
               ],
             ],
@@ -192,33 +211,6 @@ class _HostListPageState extends ConsumerState<HostListPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.pushNamed('newHost'),
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-class _ProposalsBanner extends StatelessWidget {
-  const _ProposalsBanner({required this.count, required this.onReview});
-
-  final int count;
-  final VoidCallback onReview;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: scheme.tertiaryContainer,
-      child: ListTile(
-        leading: Icon(Icons.sync_problem, color: scheme.onTertiaryContainer),
-        title: Text(
-          '동료가 $count건의 수정을 제안했습니다',
-          style: TextStyle(color: scheme.onTertiaryContainer),
-        ),
-        subtitle: Text(
-          '동기화할지 검토하세요',
-          style: TextStyle(color: scheme.onTertiaryContainer),
-        ),
-        trailing: FilledButton(onPressed: onReview, child: const Text('검토')),
       ),
     );
   }
@@ -300,6 +292,7 @@ class _HostTile extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onShare,
+    required this.onCopy,
     this.share,
   });
 
@@ -309,6 +302,7 @@ class _HostTile extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onShare;
+  final VoidCallback onCopy;
 
   @override
   Widget build(BuildContext context) {
@@ -343,19 +337,24 @@ class _HostTile extends StatelessWidget {
           switch (v) {
             case 'edit':
               onEdit();
-            case 'delete':
-              onDelete();
-            default:
+            case 'share':
               onShare();
+            case 'copy':
+              onCopy();
+            default:
+              onDelete();
           }
         },
-        itemBuilder: (context) => [
-          const PopupMenuItem(value: 'edit', child: Text('Edit')),
-          // Sharing is owner-only; shared-in hosts can't be re-shared.
-          if (!sharedIn)
-            const PopupMenuItem(value: 'share', child: Text('Share…')),
-          const PopupMenuItem(value: 'delete', child: Text('Delete')),
-        ],
+        // A host shared *to* me is read-only: I can copy it into my own list
+        // (then edit the copy freely) but can't change or re-share the original.
+        itemBuilder: (context) => sharedIn
+            ? const [PopupMenuItem(value: 'copy', child: Text('내 목록으로 복사'))]
+            : const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'share', child: Text('Share…')),
+                PopupMenuItem(value: 'copy', child: Text('Duplicate')),
+                PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ],
       ),
     );
   }
