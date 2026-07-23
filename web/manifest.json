@@ -1,6 +1,6 @@
 {
-    "name": "kerminal",
-    "short_name": "kerminal",
+    "name": "Kerminal",
+    "short_name": "Kerminal",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#121814",

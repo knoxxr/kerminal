@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "kr.smic" "\0"
-            VALUE "FileDescription", "kerminal" "\0"
+            VALUE "FileDescription", "Kerminal" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "kerminal" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 kr.smic. All rights reserved." "\0"
             VALUE "OriginalFilename", "kerminal.exe" "\0"
-            VALUE "ProductName", "kerminal" "\0"
+            VALUE "ProductName", "Kerminal" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
