@@ -3,6 +3,14 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.8]
+
+### Fixed
+- **macOS 동기화 키체인 오류(-34018) 해결** — `keychain-access-groups` 엔타이틀먼트를
+  추가해 flutter_secure_storage가 macOS 키체인에 접근할 수 있게 했습니다. 이게 없어
+  동기화 시 secret 저장/읽기가 `errSecMissingEntitlement`로 실패했습니다. (Windows는
+  영향 없음.)
+
 ## [0.2.7]
 
 ### Fixed
