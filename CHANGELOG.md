@@ -3,6 +3,17 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.4]
+
+### Added
+- **호스트 공유 (P3)** — 특정 호스트를 동료 이메일로 공유. 콘텐츠 키를 동료 공개키로
+  봉인해 서버는 평문을 모른 채 공유됩니다. 공유받은/공유한 호스트에 라벨 표시.
+- **공유 호스트 읽기전용 + 복사 (P4)** — 공유받은 호스트는 읽기전용이며, "내 목록으로
+  복사"해 자기 소유 호스트로 만든 뒤 자유롭게 편집·재공유. Realtime으로 공유·변경이
+  자동 반영됩니다.
+- **변경 이력 + 롤백 + 휴지통 (P5)** — 호스트 추가·수정·삭제 이력을 암호화해 기록하고,
+  버전별로 롤백하거나 삭제한 호스트를 휴지통에서 복원할 수 있습니다.
+
 ## [0.2.1]
 
 ### Added
