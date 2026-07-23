@@ -135,6 +135,20 @@ create or replace function public.can_edit_host(h uuid) returns boolean as $$
 $$ language sql security definer stable;
 
 -- =============================================================================
+-- Base privileges for the API roles.
+--
+-- RLS (below) is what actually restricts access, but Postgres still checks
+-- table-level GRANTs first. Without these, even a signed-in (authenticated)
+-- request fails with "permission denied for table" (SQLSTATE 42501). Supabase
+-- normally grants these automatically; we grant them explicitly so the schema
+-- is self-contained. `anon` is intentionally left with no table access — every
+-- policy below requires the `authenticated` role.
+-- =============================================================================
+grant usage on schema public to authenticated;
+grant select, insert, update, delete
+  on all tables in schema public to authenticated;
+
+-- =============================================================================
 -- Row-Level Security
 -- =============================================================================
 alter table public.profiles      enable row level security;
