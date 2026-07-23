@@ -112,6 +112,23 @@ drop trigger if exists hosts_touch on public.hosts;
 create trigger hosts_touch before update on public.hosts
   for each row execute function public.touch_updated_at();
 
+-- Force a host's owner to the caller, so the client never has to send owner_id
+-- (and can't send a wrong one). This makes the `owner_id = auth.uid()` RLS check
+-- pass for any client, regardless of what it submits. Skipped when there is no
+-- JWT (e.g. service-role/admin writes), which keep the supplied owner_id.
+create or replace function public.hosts_force_owner() returns trigger as $$
+begin
+  if auth.uid() is not null then
+    new.owner_id = auth.uid();
+  end if;
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists hosts_force_owner on public.hosts;
+create trigger hosts_force_owner before insert or update on public.hosts
+  for each row execute function public.hosts_force_owner();
+
 -- helper: is the current user allowed to see this host? ------------------------
 create or replace function public.can_access_host(h uuid) returns boolean as $$
   select exists (
