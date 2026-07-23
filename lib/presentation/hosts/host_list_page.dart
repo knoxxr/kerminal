@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../application/account_providers.dart';
 import '../../application/known_hosts.dart';
 import '../../application/providers.dart';
 import '../../application/sessions.dart';
@@ -128,6 +129,11 @@ class _HostListPageState extends ConsumerState<HostListPage> {
     final hosts = ref.watch(hostsProvider);
     final shareInfo = ref.watch(shareInfoProvider);
 
+    // Owner badges are only meaningful once signed in (cloud active); a purely
+    // local user has no ownership concept, so we skip them.
+    final account = ref.watch(accountControllerProvider).value;
+    final signedIn = account is AccountLocked || account is AccountUnlocked;
+
     // Keep realtime sync alive while signed in + unlocked (pull + labels
     // refresh automatically on any change).
     ref.watch(syncRealtimeProvider);
@@ -202,6 +208,7 @@ class _HostListPageState extends ConsumerState<HostListPage> {
                     _HostTile(
                       host: host,
                       share: shareInfo[host.id],
+                      signedIn: signedIn,
                       onTap: () => _connect(host),
                       onEdit: () =>
                           context.pushNamed('editHost', extra: host),
@@ -223,30 +230,41 @@ class _HostListPageState extends ConsumerState<HostListPage> {
   }
 }
 
+enum _ChipTone { shared, owner }
+
 class _ShareChip extends StatelessWidget {
-  const _ShareChip({required this.icon, required this.label});
+  const _ShareChip({
+    required this.icon,
+    required this.label,
+    this.tone = _ChipTone.shared,
+  });
 
   final IconData icon;
   final String label;
+  final _ChipTone tone;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final (bg, fg) = switch (tone) {
+      _ChipTone.owner => (scheme.primaryContainer, scheme.onPrimaryContainer),
+      _ChipTone.shared => (
+          scheme.secondaryContainer,
+          scheme.onSecondaryContainer
+        ),
+    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
+        color: bg,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: scheme.onSecondaryContainer),
+          Icon(icon, size: 12, color: fg),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 11, color: scheme.onSecondaryContainer),
-          ),
+          Text(label, style: TextStyle(fontSize: 11, color: fg)),
         ],
       ),
     );
@@ -302,10 +320,12 @@ class _HostTile extends StatelessWidget {
     required this.onCopy,
     required this.onHistory,
     this.share,
+    this.signedIn = false,
   });
 
   final Host host;
   final HostShareInfo? share;
+  final bool signedIn;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
@@ -333,9 +353,18 @@ class _HostTile extends StatelessWidget {
               icon: Icons.people_alt_outlined,
               label: '공유받음 · ${share!.ownerEmail ?? '동료'}',
             ),
-          ] else if (share?.sharedOut ?? false) ...[
+          ] else if (signedIn) ...[
+            // A host I own: I'm the owner and the only one who can edit it.
             const SizedBox(width: 8),
-            const _ShareChip(icon: Icons.ios_share, label: '공유함'),
+            const _ShareChip(
+              icon: Icons.verified_user_outlined,
+              label: '소유자',
+              tone: _ChipTone.owner,
+            ),
+            if (share?.sharedOut ?? false) ...[
+              const SizedBox(width: 6),
+              const _ShareChip(icon: Icons.ios_share, label: '공유함'),
+            ],
           ],
         ],
       ),
