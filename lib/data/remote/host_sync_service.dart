@@ -112,22 +112,35 @@ class HostSyncService {
     final contentKey = existing ?? SymmetricCrypto.randomKey();
     final ciphertext = HostCodec.encrypt(payload, contentKey);
 
-    // owner_id is omitted on purpose: the DB defaults it to auth.uid(), so it
-    // always matches the session that RLS checks — the client can't get it
-    // wrong. On update (conflict) the existing owner_id is left unchanged.
-    await _client.from('hosts').upsert({
-      'id': host.id,
-      'ciphertext': ciphertext,
-      'deleted': false,
-    });
-    await _client.from('host_keys').upsert({
-      'host_id': host.id,
-      'recipient_id': _me,
-      'sealed_content_key': base64.encode(
-        IdentityCrypto.seal(contentKey, _identity.publicKey),
-      ),
-    });
-    await _recordVersion(host.id, existing == null ? 'create' : 'update', ciphertext);
+    // Use plain INSERT for new hosts and UPDATE for existing ones instead of
+    // upsert: PostgREST's upsert (INSERT ... ON CONFLICT DO UPDATE) trips the
+    // row-level-security WITH CHECK evaluation, whereas insert/update do not.
+    // owner_id is left to the column default (auth.uid()) on insert.
+    if (existing == null) {
+      await _client.from('hosts').insert({
+        'id': host.id,
+        'ciphertext': ciphertext,
+        'deleted': false,
+      });
+      await _client.from('host_keys').insert({
+        'host_id': host.id,
+        'recipient_id': _me,
+        'sealed_content_key': base64.encode(
+          IdentityCrypto.seal(contentKey, _identity.publicKey),
+        ),
+      });
+    } else {
+      await _client
+          .from('hosts')
+          .update({'ciphertext': ciphertext, 'deleted': false})
+          .eq('id', host.id);
+      // host_keys row already exists (same reused content key) — nothing to do.
+    }
+    await _recordVersion(
+      host.id,
+      existing == null ? 'create' : 'update',
+      ciphertext,
+    );
   }
 
   Future<void> pushDelete(String hostId) async {
