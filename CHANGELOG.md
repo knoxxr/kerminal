@@ -3,6 +3,15 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.9]
+
+### Fixed
+- **macOS 실행 불가 + 동기화 -34018 근본 해결** — 0.2.8에서 추가한
+  `keychain-access-groups` 엔타이틀먼트가 ad-hoc 서명과 충돌해 앱이 실행되지 않던
+  문제를 되돌리고, macOS에서는 OS 키체인 대신 **AES-256-GCM 암호화 파일**에 비밀을
+  저장하도록 변경했습니다(Apple 팀 서명 없이도 동작). Windows/Linux/모바일은 기존
+  OS 보안 저장소를 그대로 사용합니다.
+
 ## [0.2.8]
 
 ### Fixed

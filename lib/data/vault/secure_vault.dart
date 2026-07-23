@@ -1,5 +1,10 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+// Picks a macOS file-based store when appropriate; returns null elsewhere so we
+// fall back to the OS keychain/keystore. Web build gets the stub (always null).
+import 'file_secret_store.dart'
+    if (dart.library.html) 'file_secret_store_web.dart';
+
 /// Minimal key/value backend behind [SecureVault]. Abstracted so tests can
 /// inject an in-memory store instead of the platform keychain.
 abstract interface class SecretStore {
@@ -8,18 +13,12 @@ abstract interface class SecretStore {
   Future<void> delete(String key);
 }
 
-/// Default [SecretStore] backed by the OS keychain/keystore.
-class _FlutterSecretStore implements SecretStore {
-  const _FlutterSecretStore();
+/// [SecretStore] backed by the OS keychain/keystore (Windows Credential
+/// Manager, libsecret, Android Keystore, iOS keychain, web storage).
+class FlutterSecretStore implements SecretStore {
+  const FlutterSecretStore();
 
-  // macOS: use the legacy file-based (login) keychain, not the data-protection
-  // keychain. The data-protection keychain requires an `application-identifier`
-  // entitlement that only exists when signed with an Apple team; our ad-hoc
-  // direct-distribution builds have none, so it fails with errSecMissingEntitlement
-  // (-34018). The file-based keychain works without that entitlement.
-  static const _storage = FlutterSecureStorage(
-    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
-  );
+  static const _storage = FlutterSecureStorage();
 
   @override
   Future<void> write(String key, String value) =>
@@ -35,9 +34,13 @@ class _FlutterSecretStore implements SecretStore {
 /// Stores SSH secrets (passwords and private keys) in the OS-backed secure
 /// storage. Secrets are keyed by an opaque id that [Host] metadata references;
 /// nothing secret ever touches the plain-text database.
+///
+/// On macOS the OS keychain is unavailable to ad-hoc-signed (non-App-Store)
+/// builds, so secrets go to an encrypted file instead — see
+/// [macosSecretStore] / FileSecretStore.
 class SecureVault {
   SecureVault([SecretStore? store])
-      : _store = store ?? const _FlutterSecretStore();
+    : _store = store ?? (macosSecretStore() ?? const FlutterSecretStore());
 
   final SecretStore _store;
 
