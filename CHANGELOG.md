@@ -3,6 +3,14 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.6]
+
+### Fixed
+- **동기화 RLS 42501 확정 수정** — 호스트 업로드 시 `owner_id`를 클라이언트가 보내지
+  않고, 서버가 `auth.uid()`로 자동 설정하도록 변경. 세션/토큰 상태와 무관하게 RLS를
+  통과합니다. (기존 Supabase 프로젝트는 `owner_id` 컬럼에 `default auth.uid()`를
+  한 번 적용해야 합니다 — README 참고.)
+
 ## [0.2.5]
 
 ### Fixed
