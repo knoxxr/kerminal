@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.5]
+
+### Fixed
+- **동기화 실패(RLS 42501) 해결** — 호스트 업로드 시 `owner_id`를 현재 로그인 세션
+  사용자에서 가져오도록 바꿔, 서버의 `auth.uid()`와 항상 일치하도록 했습니다.
+  (캡처된 값이 세션과 어긋나면 "row-level security policy" 위반이 났습니다.)
+
 ## [0.2.4]
 
 ### Added
