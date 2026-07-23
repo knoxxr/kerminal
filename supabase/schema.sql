@@ -112,9 +112,23 @@ drop trigger if exists hosts_touch on public.hosts;
 create trigger hosts_touch before update on public.hosts
   for each row execute function public.touch_updated_at();
 
--- The client omits owner_id on insert; the column default (auth.uid(), set on
--- the hosts table above) fills it, so the strict `owner_id = auth.uid()` RLS
--- check below always passes without the client ever sending it.
+-- Force a host's owner to the caller on insert/update. The client omits
+-- owner_id; a column default of auth.uid() proved unreliable across Supabase's
+-- PostgREST instances, whereas this BEFORE trigger sets it deterministically —
+-- so the strict `owner_id = auth.uid()` RLS check below always passes and the
+-- owner can't be spoofed. Skipped when there is no JWT (service-role writes).
+create or replace function public.hosts_force_owner() returns trigger as $$
+begin
+  if auth.uid() is not null then
+    new.owner_id := auth.uid();
+  end if;
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists hosts_force_owner on public.hosts;
+create trigger hosts_force_owner before insert or update on public.hosts
+  for each row execute function public.hosts_force_owner();
 
 -- helper: is the current user allowed to see this host? ------------------------
 create or replace function public.can_access_host(h uuid) returns boolean as $$
