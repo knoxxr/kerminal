@@ -31,6 +31,40 @@ class HostShareInfo {
   final bool sharedOut;
 }
 
+/// One entry in a host's change history (see [HostSyncService.fetchHistory]).
+class HostVersion {
+  const HostVersion({
+    required this.version,
+    required this.op,
+    required this.editorEmail,
+    required this.createdAt,
+    required this.hasSnapshot,
+    this.summary,
+  });
+
+  final int version;
+
+  /// 'create' | 'update' | 'delete' | 'rollback'.
+  final String op;
+  final String editorEmail;
+
+  /// ISO-8601 timestamp string from the server.
+  final String createdAt;
+
+  /// Whether this version can be restored (has an encrypted snapshot).
+  final bool hasSnapshot;
+
+  /// Decrypted "label · host:port" at this version, if decryptable.
+  final String? summary;
+}
+
+/// A soft-deleted host that can be restored (see [HostSyncService.fetchDeleted]).
+class DeletedHost {
+  const DeletedHost({required this.hostId, required this.summary});
+  final String hostId;
+  final String summary;
+}
+
 /// End-to-end-encrypted sync + sharing of hosts.
 ///
 /// A host is encrypted with a stable per-host content key; that key is sealed
@@ -66,10 +100,12 @@ class HostSyncService {
   }
 
   /// Encrypts and uploads a host I own (create or update). Reuses the existing
-  /// content key when present so colleagues keep access after an edit.
+  /// content key when present so colleagues keep access after an edit, and
+  /// records an applied version for history/rollback.
   Future<void> pushHost(Host host) async {
     final payload = await _hosts.readPayload(host);
-    final contentKey = await _contentKeyFor(host.id) ?? SymmetricCrypto.randomKey();
+    final existing = await _contentKeyFor(host.id);
+    final contentKey = existing ?? SymmetricCrypto.randomKey();
     final ciphertext = HostCodec.encrypt(payload, contentKey);
 
     await _client.from('hosts').upsert({
@@ -85,10 +121,32 @@ class HostSyncService {
         IdentityCrypto.seal(contentKey, _identity.publicKey),
       ),
     });
+    await _recordVersion(host.id, existing == null ? 'create' : 'update', ciphertext);
   }
 
   Future<void> pushDelete(String hostId) async {
     await _client.from('hosts').update({'deleted': true}).eq('id', hostId);
+    await _recordVersion(hostId, 'delete', null);
+  }
+
+  /// Appends an applied version snapshot for history/rollback.
+  Future<void> _recordVersion(String hostId, String op, String? ciphertext) async {
+    final maxRow = await _client
+        .from('host_versions')
+        .select('version')
+        .eq('host_id', hostId)
+        .order('version', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    final next = ((maxRow?['version'] as int?) ?? 0) + 1;
+    await _client.from('host_versions').insert({
+      'host_id': hostId,
+      'version': next,
+      'editor_id': _me,
+      'op': op,
+      'ciphertext': ciphertext,
+      'status': 'applied',
+    });
   }
 
   /// Shares a host I own with [colleague] by sealing its content key to their
@@ -219,6 +277,105 @@ class HostSyncService {
     }
 
     return info;
+  }
+
+  // --- History & rollback (P5) ---
+
+  /// The change history of a host (newest first), for display and rollback.
+  Future<List<HostVersion>> fetchHistory(String hostId) async {
+    final contentKey = await _contentKeyFor(hostId);
+    final rows = await _client
+        .from('host_versions')
+        .select('version, op, editor_id, ciphertext, created_at')
+        .eq('host_id', hostId)
+        .order('version', ascending: false);
+    if (rows.isEmpty) return const [];
+
+    final editorIds = {for (final r in rows) r['editor_id'] as String};
+    final profs = await _client
+        .from('profiles')
+        .select('id, email')
+        .inFilter('id', editorIds.toList());
+    final email = {for (final p in profs) p['id'] as String: p['email'] as String};
+
+    return [
+      for (final r in rows)
+        HostVersion(
+          version: r['version'] as int,
+          op: r['op'] as String,
+          editorEmail: email[r['editor_id'] as String] ?? '',
+          createdAt: r['created_at'] as String? ?? '',
+          hasSnapshot: r['ciphertext'] != null,
+          summary: _summaryOf(r['ciphertext'] as String?, contentKey),
+        ),
+    ];
+  }
+
+  String? _summaryOf(String? ciphertext, Uint8List? key) {
+    if (ciphertext == null || key == null) return null;
+    try {
+      final p = HostCodec.decrypt(ciphertext, key);
+      return '${p.label} · ${p.hostname}:${p.port}';
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Restores a host to the snapshot at [version], recording a new version.
+  Future<void> rollbackTo(String hostId, int version) async {
+    final row = await _client
+        .from('host_versions')
+        .select('ciphertext')
+        .eq('host_id', hostId)
+        .eq('version', version)
+        .maybeSingle();
+    final ciphertext = row?['ciphertext'] as String?;
+    if (ciphertext == null) {
+      throw StateError('That version has no snapshot to restore.');
+    }
+    await _client
+        .from('hosts')
+        .update({'ciphertext': ciphertext, 'deleted': false})
+        .eq('id', hostId);
+    await _recordVersion(hostId, 'rollback', ciphertext);
+    final contentKey = await _contentKeyFor(hostId);
+    if (contentKey != null) {
+      await _hosts.applyRemote(hostId, HostCodec.decrypt(ciphertext, contentKey));
+    }
+  }
+
+  /// Soft-deleted hosts I own — the "trash" that can be restored.
+  Future<List<DeletedHost>> fetchDeleted() async {
+    final rows = await _client
+        .from('hosts')
+        .select('id, ciphertext')
+        .eq('owner_id', _me)
+        .eq('deleted', true);
+    final result = <DeletedHost>[];
+    for (final r in rows) {
+      final id = r['id'] as String;
+      final contentKey = await _contentKeyFor(id);
+      final summary =
+          _summaryOf(r['ciphertext'] as String?, contentKey) ?? '(host)';
+      result.add(DeletedHost(hostId: id, summary: summary));
+    }
+    return result;
+  }
+
+  /// Un-deletes a host and re-adds it locally.
+  Future<void> restoreDeleted(String hostId) async {
+    await _client.from('hosts').update({'deleted': false}).eq('id', hostId);
+    final row = await _client
+        .from('hosts')
+        .select('ciphertext')
+        .eq('id', hostId)
+        .maybeSingle();
+    final ciphertext = row?['ciphertext'] as String?;
+    await _recordVersion(hostId, 'rollback', ciphertext);
+    final contentKey = await _contentKeyFor(hostId);
+    if (contentKey != null && ciphertext != null) {
+      await _hosts.applyRemote(hostId, HostCodec.decrypt(ciphertext, contentKey));
+    }
   }
 
   // --- Realtime ---

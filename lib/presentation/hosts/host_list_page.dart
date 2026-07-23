@@ -9,6 +9,7 @@ import '../../application/update_providers.dart';
 import '../../data/remote/host_sync_service.dart';
 import '../../domain/entities/host.dart';
 import '../terminal/host_key_prompt.dart';
+import 'history_sheets.dart';
 import 'share_host_sheet.dart';
 
 /// Home screen: saved hosts grouped by folder, with search, quick connect, and
@@ -141,6 +142,11 @@ class _HostListPageState extends ConsumerState<HostListPage> {
             onPressed: () => context.pushNamed('connect'),
           ),
           IconButton(
+            tooltip: 'Recently deleted',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => showTrashSheet(context),
+          ),
+          IconButton(
             tooltip: 'Settings',
             icon: ref.watch(updateCheckProvider).maybeWhen(
                   data: (info) => (info?.updateAvailable ?? false)
@@ -202,6 +208,7 @@ class _HostListPageState extends ConsumerState<HostListPage> {
                       onDelete: () => _confirmDelete(host),
                       onShare: () => showShareHostSheet(context, host),
                       onCopy: () => _copyHost(host),
+                      onHistory: () => showHistorySheet(context, host),
                     ),
               ],
             ],
@@ -293,6 +300,7 @@ class _HostTile extends StatelessWidget {
     required this.onDelete,
     required this.onShare,
     required this.onCopy,
+    required this.onHistory,
     this.share,
   });
 
@@ -303,6 +311,7 @@ class _HostTile extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onShare;
   final VoidCallback onCopy;
+  final VoidCallback onHistory;
 
   @override
   Widget build(BuildContext context) {
@@ -341,6 +350,8 @@ class _HostTile extends StatelessWidget {
               onShare();
             case 'copy':
               onCopy();
+            case 'history':
+              onHistory();
             default:
               onDelete();
           }
@@ -353,6 +364,7 @@ class _HostTile extends StatelessWidget {
                 PopupMenuItem(value: 'edit', child: Text('Edit')),
                 PopupMenuItem(value: 'share', child: Text('Share…')),
                 PopupMenuItem(value: 'copy', child: Text('Duplicate')),
+                PopupMenuItem(value: 'history', child: Text('History')),
                 PopupMenuItem(value: 'delete', child: Text('Delete')),
               ],
       ),
