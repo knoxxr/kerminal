@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.3.0]
+
+### Added
+- **소유자 배지** — 호스트 목록에서 내가 소유한 호스트에 "소유자" 배지를 표시하고,
+  공유한 경우 "공유함"을 함께 보여줍니다. 공유받은 호스트는 "공유받음 · {소유자}"로
+  구분됩니다. (수정은 소유자만 — 공유받은 호스트는 읽기전용.)
+
 ## [0.2.9]
 
 ### Fixed
@@ -170,6 +177,7 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.3.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.0
 [0.1.5]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.5
 [0.1.4]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.4
 [0.1.3]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.3
