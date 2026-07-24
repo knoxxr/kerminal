@@ -3,6 +3,12 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.3.2]
+
+### Changed
+- **호스트 더블클릭 접속** — 단일 클릭 오접속을 막기 위해 호스트는 더블클릭
+  (더블탭)할 때만 접속합니다. (메인 목록·사이드바 공통)
+
 ## [0.3.1]
 
 ### Changed
@@ -187,6 +193,7 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.3.2]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.2
 [0.3.1]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.1
 [0.3.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.0
 [0.1.5]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.5
