@@ -68,10 +68,19 @@ create table if not exists public.host_keys (
   recipient_id       uuid not null references auth.users (id) on delete cascade,
   sealed_content_key text not null,      -- crypto_box_seal(content_key, pubkey)
   can_edit           boolean not null default true,
+  -- 'accepted' : the recipient has the host in their list (always so for the
+  --              owner's own key). 'pending' : an invitation the recipient must
+  --              accept before the host appears in their list. Default
+  --              'accepted' so pre-invitation shares keep working after upgrade.
+  status             text not null default 'accepted'
+                       check (status in ('pending','accepted')),
   created_at         timestamptz not null default now(),
   primary key (host_id, recipient_id)
 );
 create index if not exists host_keys_recipient_idx on public.host_keys (recipient_id);
+-- Upgrade path for projects created before the invitation feature.
+alter table public.host_keys
+  add column if not exists status text not null default 'accepted';
 
 -- =============================================================================
 -- host_versions — append-only change log for history/rollback AND for
@@ -207,7 +216,11 @@ drop policy if exists hosts_delete on public.hosts;
 create policy hosts_delete on public.hosts
   for delete to authenticated using (owner_id = auth.uid());
 
--- host_keys: readable by the recipient or the host owner; managed by owner only
+-- host_keys: readable by the recipient or the host owner; created/removed by the
+-- owner (who invites). The RECIPIENT may additionally act on their own row to
+-- accept an invitation (update status) or decline it (delete) — but only their
+-- own row, so they can never grant themselves access to a host they weren't
+-- invited to.
 drop policy if exists host_keys_select on public.host_keys;
 create policy host_keys_select on public.host_keys
   for select to authenticated
@@ -217,6 +230,17 @@ create policy host_keys_write on public.host_keys
   for all to authenticated
   using (public.is_host_owner(host_id))
   with check (public.is_host_owner(host_id));
+-- recipient accepts an invitation (flip status on their own row)
+drop policy if exists host_keys_recipient_accept on public.host_keys;
+create policy host_keys_recipient_accept on public.host_keys
+  for update to authenticated
+  using (recipient_id = auth.uid())
+  with check (recipient_id = auth.uid());
+-- recipient declines an invitation (remove their own row)
+drop policy if exists host_keys_recipient_decline on public.host_keys;
+create policy host_keys_recipient_decline on public.host_keys
+  for delete to authenticated
+  using (recipient_id = auth.uid());
 
 -- host_versions:
 --   SELECT  — anyone who can access the host

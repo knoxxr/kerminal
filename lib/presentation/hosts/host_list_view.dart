@@ -82,6 +82,28 @@ class _HostListViewState extends ConsumerState<HostListView> {
     }
   }
 
+  Future<void> _acceptInvite(HostInvitation invite) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final sync = ref.read(hostSyncServiceProvider);
+    if (sync == null) return;
+    try {
+      await sync.acceptInvitation(invite.hostId);
+      messenger.showSnackBar(
+        SnackBar(content: Text('"${invite.summary}" 를 목록에 추가했습니다.')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('수신 실패: $e')));
+    }
+  }
+
+  Future<void> _declineInvite(HostInvitation invite) async {
+    final sync = ref.read(hostSyncServiceProvider);
+    if (sync == null) return;
+    try {
+      await sync.declineInvitation(invite.hostId);
+    } catch (_) {/* transient */}
+  }
+
   Future<void> _copyHost(Host host) async {
     final messenger = ScaffoldMessenger.of(context);
     final svc = ref.read(hostServiceProvider);
@@ -137,11 +159,19 @@ class _HostListViewState extends ConsumerState<HostListView> {
     final account = ref.watch(accountControllerProvider).value;
     final signedIn = account is AccountLocked || account is AccountUnlocked;
 
+    final invitations = ref.watch(pendingInvitationsProvider);
+
     // Keep realtime sync alive while this list is shown.
     ref.watch(syncRealtimeProvider);
 
     return Column(
       children: [
+        for (final invite in invitations)
+          _InvitationCard(
+            invite: invite,
+            onAccept: () => _acceptInvite(invite),
+            onDecline: () => _declineInvite(invite),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
           child: TextField(
@@ -200,6 +230,72 @@ class _HostListViewState extends ConsumerState<HostListView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A pending share invitation shown as a message at the top of the host list.
+/// The host is NOT in the list until the user taps "수신" (accept).
+class _InvitationCard extends StatelessWidget {
+  const _InvitationCard({
+    required this.invite,
+    required this.onAccept,
+    required this.onDecline,
+  });
+
+  final HostInvitation invite;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      color: scheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 10, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.mail_outline,
+                    size: 18, color: scheme.onSecondaryContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${invite.ownerEmail} 님이 호스트를 공유했습니다',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSecondaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 26),
+              child: Text(
+                invite.summary,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: scheme.onSecondaryContainer.withValues(alpha: 0.85),
+                ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(onPressed: onDecline, child: const Text('거절')),
+                const SizedBox(width: 4),
+                FilledButton(onPressed: onAccept, child: const Text('수신')),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -65,6 +65,33 @@ class DeletedHost {
   final String summary;
 }
 
+/// A colleague a host is shared with, plus whether they've accepted the
+/// invitation yet (see [HostSyncService.recipientsOf]).
+class ShareRecipient {
+  const ShareRecipient({required this.identity, required this.accepted});
+  final PublicIdentity identity;
+  final bool accepted;
+}
+
+/// A share invitation awaiting the signed-in user's acceptance — the host does
+/// not appear in their list until they accept (see
+/// [HostSyncService.pendingInvitations]).
+class HostInvitation {
+  const HostInvitation({
+    required this.hostId,
+    required this.ownerEmail,
+    required this.summary,
+  });
+
+  final String hostId;
+
+  /// Email of the owner who invited me.
+  final String ownerEmail;
+
+  /// Decrypted "label · host:port" preview, or a placeholder if undecryptable.
+  final String summary;
+}
+
 /// End-to-end-encrypted sync + sharing of hosts.
 ///
 /// A host is encrypted with a stable per-host content key; that key is sealed
@@ -128,6 +155,9 @@ class HostSyncService {
         'sealed_content_key': base64.encode(
           IdentityCrypto.seal(contentKey, _identity.publicKey),
         ),
+        // The owner's own key is implicitly accepted — the host is already in
+        // their list. Only shares (see [shareHost]) start as 'pending'.
+        'status': 'accepted',
       });
     } else {
       await _client
@@ -168,8 +198,10 @@ class HostSyncService {
     });
   }
 
-  /// Shares a host I own with [colleague] by sealing its content key to their
-  /// public key. Throws if the host hasn't been synced yet.
+  /// Invites [colleague] to a host I own by sealing its content key to their
+  /// public key. The invitation starts as 'pending': the host does not appear
+  /// in the colleague's list until they accept it. Throws if the host hasn't
+  /// been synced yet.
   Future<void> shareHost(String hostId, PublicIdentity colleague) async {
     final contentKey = await _contentKeyFor(hostId);
     if (contentKey == null) {
@@ -182,7 +214,94 @@ class HostSyncService {
         IdentityCrypto.seal(contentKey, colleague.publicKey),
       ),
       'can_edit': true,
+      'status': 'pending',
     });
+  }
+
+  /// Invitations shared *to* me that I haven't accepted yet — shown as messages
+  /// the user can accept (adding the host to their list) or decline.
+  Future<List<HostInvitation>> pendingInvitations() async {
+    final keyRows = await _client
+        .from('host_keys')
+        .select('host_id, sealed_content_key')
+        .eq('recipient_id', _me)
+        .eq('status', 'pending');
+    if (keyRows.isEmpty) return const [];
+
+    final hostIds = [for (final k in keyRows) k['host_id'] as String];
+    final hostRows = await _client
+        .from('hosts')
+        .select('id, owner_id, ciphertext, deleted')
+        .inFilter('id', hostIds);
+    final ownerIds = <String>{
+      for (final h in hostRows) h['owner_id'] as String,
+    };
+    final ownerEmail = <String, String>{};
+    if (ownerIds.isNotEmpty) {
+      final profs = await _client
+          .from('profiles')
+          .select('id, email')
+          .inFilter('id', ownerIds.toList());
+      for (final p in profs) {
+        ownerEmail[p['id'] as String] = p['email'] as String;
+      }
+    }
+    final sealedFor = {
+      for (final k in keyRows)
+        k['host_id'] as String: k['sealed_content_key'] as String,
+    };
+
+    final result = <HostInvitation>[];
+    for (final h in hostRows) {
+      if (h['deleted'] == true) continue;
+      final id = h['id'] as String;
+      final sealed = sealedFor[id];
+      String summary = '(호스트)';
+      if (sealed != null) {
+        try {
+          final key = IdentityCrypto.unseal(
+            base64.decode(sealed),
+            _identity.privateKey,
+          );
+          summary = _summaryOf(h['ciphertext'] as String?, key) ?? summary;
+        } catch (_) {/* keep placeholder */}
+      }
+      result.add(HostInvitation(
+        hostId: id,
+        ownerEmail: ownerEmail[h['owner_id'] as String] ?? '동료',
+        summary: summary,
+      ));
+    }
+    return result;
+  }
+
+  /// Accepts an invitation: flips my key row to 'accepted' and pulls the host
+  /// into local storage so it appears in the list immediately.
+  Future<void> acceptInvitation(String hostId) async {
+    await _client
+        .from('host_keys')
+        .update({'status': 'accepted'})
+        .eq('host_id', hostId)
+        .eq('recipient_id', _me);
+    final contentKey = await _contentKeyFor(hostId);
+    if (contentKey == null) return;
+    final row = await _client
+        .from('hosts')
+        .select('ciphertext, deleted')
+        .eq('id', hostId)
+        .maybeSingle();
+    if (row == null || row['deleted'] == true) return;
+    final payload = HostCodec.decrypt(row['ciphertext'] as String, contentKey);
+    await _hosts.applyRemote(hostId, payload);
+  }
+
+  /// Declines an invitation: removes my key row so I lose access entirely.
+  Future<void> declineInvitation(String hostId) async {
+    await _client
+        .from('host_keys')
+        .delete()
+        .eq('host_id', hostId)
+        .eq('recipient_id', _me);
   }
 
   Future<void> unshareHost(String hostId, String recipientId) async {
@@ -193,25 +312,32 @@ class HostSyncService {
         .eq('recipient_id', recipientId);
   }
 
-  /// The colleagues a host is currently shared with (excludes me).
-  Future<List<PublicIdentity>> recipientsOf(String hostId) async {
+  /// The colleagues a host is currently shared with (excludes me), each tagged
+  /// with whether they've accepted the invitation yet.
+  Future<List<ShareRecipient>> recipientsOf(String hostId) async {
     final rows = await _client
         .from('host_keys')
-        .select('recipient_id')
+        .select('recipient_id, status')
         .eq('host_id', hostId)
         .neq('recipient_id', _me);
-    final ids = rows.map((r) => r['recipient_id'] as String).toList();
-    if (ids.isEmpty) return const [];
+    if (rows.isEmpty) return const [];
+    final status = {
+      for (final r in rows)
+        r['recipient_id'] as String: (r['status'] as String?) ?? 'accepted',
+    };
     final profs = await _client
         .from('profiles')
         .select('id, email, public_key')
-        .inFilter('id', ids);
+        .inFilter('id', status.keys.toList());
     return profs
         .map(
-          (p) => PublicIdentity(
-            userId: p['id'] as String,
-            email: p['email'] as String,
-            publicKey: base64.decode(p['public_key'] as String),
+          (p) => ShareRecipient(
+            identity: PublicIdentity(
+              userId: p['id'] as String,
+              email: p['email'] as String,
+              publicKey: base64.decode(p['public_key'] as String),
+            ),
+            accepted: status[p['id'] as String] == 'accepted',
           ),
         )
         .toList();
@@ -225,16 +351,20 @@ class HostSyncService {
         .select('id, owner_id, ciphertext, deleted');
     final keyRows = await _client
         .from('host_keys')
-        .select('host_id, recipient_id, sealed_content_key');
+        .select('host_id, recipient_id, sealed_content_key, status');
 
-    // My sealed key per host, and which hosts I've shared out.
+    // My sealed key per host (with acceptance status), and which hosts I've
+    // shared out.
     final myKey = <String, String>{};
+    final myKeyAccepted = <String, bool>{};
     final sharedOut = <String>{};
     for (final k in keyRows) {
       final hostId = k['host_id'] as String;
       final recipient = k['recipient_id'] as String;
       if (recipient == _me) {
         myKey[hostId] = k['sealed_content_key'] as String;
+        myKeyAccepted[hostId] = ((k['status'] as String?) ?? 'accepted') ==
+            'accepted';
       } else {
         // RLS only returns non-me rows for hosts I own → those are shared out.
         sharedOut.add(hostId);
@@ -272,6 +402,11 @@ class HostSyncService {
       final sealed = myKey[id];
       if (sealed == null) continue; // no key for us → cannot decrypt
 
+      final ownedByMe = ownerId == _me;
+      // A host shared *to* me only enters the list once I accept the
+      // invitation; until then it lives in [pendingInvitations], not here.
+      if (!ownedByMe && !(myKeyAccepted[id] ?? true)) continue;
+
       final contentKey = IdentityCrypto.unseal(
         base64.decode(sealed),
         _identity.privateKey,
@@ -279,7 +414,6 @@ class HostSyncService {
       final payload = HostCodec.decrypt(row['ciphertext'] as String, contentKey);
       await _hosts.applyRemote(id, payload);
 
-      final ownedByMe = ownerId == _me;
       info[id] = HostShareInfo(
         ownedByMe: ownedByMe,
         ownerEmail: ownedByMe ? null : ownerEmail[ownerId],

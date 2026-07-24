@@ -13,6 +13,10 @@
 Supabase 대시보드 **SQL Editor**에서 [`schema.sql`](schema.sql) 전체를 붙여넣고 실행합니다.
 (테이블·RLS 정책·Realtime 발행 설정까지 포함. 재실행해도 안전합니다.)
 
+> **기존 프로젝트 업그레이드(초대 수신 기능):** 공유가 이제 "초대 → 수신" 방식으로
+> 바뀌었습니다. `schema.sql`을 **한 번 더 실행**하면 `host_keys.status` 컬럼과
+> 수신자용 RLS 정책이 추가됩니다(기존 공유는 `accepted` 기본값으로 그대로 유지).
+
 ## 3. 인증 설정
 - **Authentication → Providers → Email** 활성화
 - 개발 편의를 위해 초기엔 **Confirm email** 을 꺼도 됩니다(운영 시 켜기 권장)

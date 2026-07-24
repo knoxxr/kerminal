@@ -52,6 +52,20 @@ final shareInfoProvider =
       ShareInfoNotifier.new,
     );
 
+/// Share invitations addressed to me that I haven't accepted yet. Refreshed on
+/// each reconcile; drives the invitation messages on the host list.
+class InvitationsNotifier extends Notifier<List<HostInvitation>> {
+  @override
+  List<HostInvitation> build() => const [];
+
+  void set(List<HostInvitation> value) => state = value;
+}
+
+final pendingInvitationsProvider =
+    NotifierProvider<InvitationsNotifier, List<HostInvitation>>(
+      InvitationsNotifier.new,
+    );
+
 /// Keeps sync live: subscribes to realtime changes while signed in + unlocked,
 /// refreshing local hosts and share labels on any event. Watch it from a
 /// long-lived widget (the host list) to keep it alive.
@@ -61,6 +75,9 @@ final syncRealtimeProvider = Provider<void>((ref) {
   Future<void> refresh() async {
     try {
       ref.read(shareInfoProvider.notifier).set(await sync.reconcile());
+      ref
+          .read(pendingInvitationsProvider.notifier)
+          .set(await sync.pendingInvitations());
     } catch (_) {/* offline / transient */}
   }
 

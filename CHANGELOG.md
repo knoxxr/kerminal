@@ -3,6 +3,16 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.0]
+
+### Changed
+- **공유는 초대 → 수신 방식으로** — 호스트를 공유하면 상대에게 바로 목록에 뜨지
+  않고, 먼저 **초대 메시지**로 표시됩니다. 상대가 **"수신"**을 눌러야 자신의 목록에
+  추가됩니다("거절"하면 접근이 회수됩니다). 소유자는 공유 창에서 각 대상의 상태를
+  "수신 대기 / 수신함"으로 확인할 수 있습니다.
+- **잘못된 초대 대상 안내** — 초대한 이메일로 가입된 Kerminal 계정이 없으면 소유자
+  화면에 명확히 표시해 오기입을 바로잡을 수 있습니다.
+
 ## [0.3.2]
 
 ### Changed
@@ -193,6 +203,7 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.4.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.4.0
 [0.3.2]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.2
 [0.3.1]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.1
 [0.3.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.0
