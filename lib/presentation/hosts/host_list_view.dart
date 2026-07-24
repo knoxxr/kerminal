@@ -204,41 +204,50 @@ class _HostListViewState extends ConsumerState<HostListView> {
   }
 }
 
-enum _ChipTone { shared, owner }
+/// Low-emphasis "owned by me" marker — most hosts are mine, so this stays
+/// quiet (muted icon + small text, no filled background) to avoid clutter.
+class _OwnerMark extends StatelessWidget {
+  const _OwnerMark();
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.55);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.verified_user_outlined, size: 13, color: color),
+        const SizedBox(width: 3),
+        Text('소유자', style: TextStyle(fontSize: 10.5, color: color)),
+      ],
+    );
+  }
+}
 
 class _ShareChip extends StatelessWidget {
-  const _ShareChip({
-    required this.icon,
-    required this.label,
-    this.tone = _ChipTone.shared,
-  });
+  const _ShareChip({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
-  final _ChipTone tone;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final (bg, fg) = switch (tone) {
-      _ChipTone.owner => (scheme.primaryContainer, scheme.onPrimaryContainer),
-      _ChipTone.shared => (
-          scheme.secondaryContainer,
-          scheme.onSecondaryContainer
-        ),
-    };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: bg,
+        color: scheme.secondaryContainer,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: fg),
+          Icon(icon, size: 12, color: scheme.onSecondaryContainer),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: fg)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11, color: scheme.onSecondaryContainer),
+          ),
         ],
       ),
     );
@@ -329,11 +338,7 @@ class _HostTile extends StatelessWidget {
             ),
           ] else if (signedIn) ...[
             const SizedBox(width: 8),
-            const _ShareChip(
-              icon: Icons.verified_user_outlined,
-              label: '소유자',
-              tone: _ChipTone.owner,
-            ),
+            const _OwnerMark(),
             if (share?.sharedOut ?? false) ...[
               const SizedBox(width: 6),
               const _ShareChip(icon: Icons.ios_share, label: '공유함'),

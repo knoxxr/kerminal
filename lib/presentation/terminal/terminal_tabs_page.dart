@@ -156,6 +156,43 @@ class _Tab extends StatelessWidget {
   final VoidCallback onClose;
   final VoidCallback onDuplicate;
 
+  Future<void> _showContextMenu(BuildContext context, Offset position) async {
+    final selected = await showMenu<String>(
+      context: context,
+      position: RelativeRect.fromLTRB(
+        position.dx,
+        position.dy,
+        position.dx,
+        position.dy,
+      ),
+      items: const [
+        PopupMenuItem(
+          value: 'duplicate',
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.copy_all_outlined),
+            title: Text('Duplicate'),
+          ),
+        ),
+        PopupMenuItem(
+          value: 'close',
+          child: ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.close),
+            title: Text('닫기'),
+          ),
+        ),
+      ],
+    );
+    if (selected == 'duplicate') {
+      onDuplicate();
+    } else if (selected == 'close') {
+      onClose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -168,9 +205,10 @@ class _Tab extends StatelessWidget {
             ? accent.withValues(alpha: 0.30)
             : scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        // Right-click duplicates this host into a new tab.
+        // Right-click opens a context menu (Duplicate / Close).
         child: GestureDetector(
-          onSecondaryTap: onDuplicate,
+          onSecondaryTapUp: (details) =>
+              _showContextMenu(context, details.globalPosition),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(8),
