@@ -3,6 +3,12 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.3]
+
+### Changed
+- **앱 아이콘 리디자인(방사형)** — 중심의 터미널 프롬프트 `>_`에서 빛이 사방으로
+  뻗어나가는 방사형 디자인으로 교체해 확장·생동감을 강조했습니다.
+
 ## [0.4.2]
 
 ### Changed
