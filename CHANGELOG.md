@@ -3,6 +3,16 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.3.1]
+
+### Changed
+- **터미널 워크스페이스** — 접속하면 호스트 목록이 좌측 사이드바로 전환(☰ 토글),
+  접속 탭은 우측 상단에 표시. 탭 우클릭 → 컨텍스트 메뉴에서 Duplicate로 같은
+  호스트를 새 탭으로 복제.
+- **오기입 방지** — 세션마다 고유 색상을 탭·터미널에 연동하고, 터미널 상단에 현재
+  접속 대상(호스트) 헤더를 표시해 어느 탭에 입력 중인지 명확히 했습니다.
+- **소유자 배지 완화** — 소유 호스트 표시를 은은한 회색 아이콘으로 줄였습니다.
+
 ## [0.3.0]
 
 ### Added
@@ -177,6 +187,7 @@ First feature-complete MVP: a cross-platform SSH/terminal client.
 ### Platforms
 - Windows, macOS, Linux, iOS, Android, Web (single Flutter codebase).
 
+[0.3.1]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.1
 [0.3.0]: https://github.com/knoxxr/kerminal/releases/tag/v0.3.0
 [0.1.5]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.5
 [0.1.4]: https://github.com/knoxxr/kerminal/releases/tag/v0.1.4
