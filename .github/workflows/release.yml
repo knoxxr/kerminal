@@ -56,6 +56,10 @@ jobs:
 
       - run: flutter pub get
       - run: dart run build_runner build
+      # Regenerate per-platform launcher icons from assets/icon/app_icon.png so
+      # the released apps always carry the current icon (done in CI since the
+      # generated icons aren't committed).
+      - run: dart run flutter_launcher_icons
 
       # --- Windows: MSIX installer, signed with the self-signed cert ---
       - if: matrix.target == 'windows'
