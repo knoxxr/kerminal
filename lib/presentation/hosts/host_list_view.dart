@@ -323,7 +323,7 @@ class _HostTile extends StatelessWidget {
         ? '${host.hostname}:${host.port}'
         : '${host.username}@${host.hostname}:${host.port}';
 
-    return ListTile(
+    final tile = ListTile(
       leading: Icon(
         host.authMethod == AuthMethod.sshKey ? Icons.key : Icons.dns_outlined,
       ),
@@ -347,7 +347,6 @@ class _HostTile extends StatelessWidget {
         ],
       ),
       subtitle: Text(subtitle),
-      onTap: onTap,
       trailing: PopupMenuButton<String>(
         onSelected: (v) {
           switch (v) {
@@ -373,6 +372,13 @@ class _HostTile extends StatelessWidget {
                 PopupMenuItem(value: 'delete', child: Text('Delete')),
               ],
       ),
+    );
+
+    // Connect on double-click/double-tap only (avoids accidental connects from
+    // a single stray click).
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(onDoubleTap: onTap, child: tile),
     );
   }
 }
