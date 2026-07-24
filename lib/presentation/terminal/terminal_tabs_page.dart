@@ -57,6 +57,11 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
             icon: const Icon(Icons.add),
             onPressed: () => context.pushNamed('connect'),
           ),
+          IconButton(
+            tooltip: 'Settings',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.pushNamed('settings'),
+          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(44),

@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.2.10]
+
+### Changed
+- **터미널 화면에서도 설정 접근** — 호스트에 연결해 터미널 탭이 열려 있을 때도
+  상단 우측에 설정 아이콘을 표시해, 호스트 목록으로 돌아가지 않고 설정을 열 수
+  있습니다.
+
 ## [0.2.9]
 
 ### Fixed
