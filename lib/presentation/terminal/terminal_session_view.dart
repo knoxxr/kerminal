@@ -7,6 +7,7 @@ import 'package:xterm/xterm.dart';
 import '../../application/sessions.dart';
 import '../../application/settings.dart';
 import '../../application/ssh_terminal_controller.dart';
+import '../../domain/entities/ssh_connection_request.dart';
 import 'terminal_toolbar.dart';
 
 /// On desktop/web, printable characters arrive as hardware key events; xterm's
@@ -25,9 +26,17 @@ final bool _useHardwareKeyboard = kIsWeb ||
 /// rebuild it or steal keyboard focus. Focus is (re)requested whenever a
 /// connection becomes ready.
 class TerminalSessionView extends ConsumerStatefulWidget {
-  const TerminalSessionView({required this.session, super.key});
+  const TerminalSessionView({
+    required this.session,
+    this.accent = Colors.teal,
+    super.key,
+  });
 
   final TerminalSession session;
+
+  /// Per-session accent (matches the tab), used for the target-host header and
+  /// terminal border so the active connection is unmistakable.
+  final Color accent;
 
   @override
   ConsumerState<TerminalSessionView> createState() =>
@@ -80,6 +89,7 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
 
     return Column(
       children: [
+        _TargetHeader(request: widget.session.request, accent: widget.accent),
         // Only the status strip rebuilds on connection-state changes.
         AnimatedBuilder(
           animation: _controller,
@@ -104,12 +114,19 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
           },
         ),
         Expanded(
-          child: TerminalView(
-            _controller.terminal,
-            focusNode: _focusNode,
-            autofocus: true,
-            hardwareKeyboardOnly: _useHardwareKeyboard,
-            textStyle: TerminalStyle(fontSize: fontSize),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(color: widget.accent, width: 3),
+              ),
+            ),
+            child: TerminalView(
+              _controller.terminal,
+              focusNode: _focusNode,
+              autofocus: true,
+              hardwareKeyboardOnly: _useHardwareKeyboard,
+              textStyle: TerminalStyle(fontSize: fontSize),
+            ),
           ),
         ),
         // Toolbar sends keys programmatically; exclude it from focus traversal
@@ -121,6 +138,52 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
 
   void _reconnect() =>
       ref.read(sessionsProvider.notifier).reconnect(widget.session.id);
+}
+
+/// Always-visible bar naming the host this terminal is connected to, tinted
+/// with the session's accent color — so it is clear which host you're typing
+/// to when several tabs are open.
+class _TargetHeader extends StatelessWidget {
+  const _TargetHeader({required this.request, required this.accent});
+
+  final SshConnectionRequest request;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final target = request.username.isEmpty
+        ? '${request.host}:${request.port}'
+        : '${request.username}@${request.host}:${request.port}';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.16),
+        border: Border(left: BorderSide(color: accent, width: 4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.circle, size: 10, color: accent),
+          const SizedBox(width: 8),
+          Text(
+            request.displayName,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              target,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ReconnectBanner extends StatelessWidget {

@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../application/known_hosts.dart';
 import '../../application/sessions.dart';
 import '../../application/ssh_terminal_controller.dart';
+import '../hosts/host_list_view.dart';
+import 'host_key_prompt.dart';
+import 'session_palette.dart';
 import 'terminal_session_view.dart';
 
-/// Multi-session terminal shell: a tab per open connection, kept alive in an
-/// [IndexedStack] so switching tabs preserves each session's scrollback.
+/// Terminal workspace: the host list as a collapsible left sidebar, connection
+/// tabs at the top-right, and the active terminal filling the rest. Sessions
+/// are kept alive in an [IndexedStack] so switching tabs preserves scrollback.
 class TerminalTabsPage extends ConsumerStatefulWidget {
   const TerminalTabsPage({super.key});
 
@@ -17,6 +22,7 @@ class TerminalTabsPage extends ConsumerStatefulWidget {
 
 class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
   int _index = 0;
+  bool _sidebarVisible = true;
 
   @override
   Widget build(BuildContext context) {
@@ -46,11 +52,36 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Hosts',
-          icon: const Icon(Icons.list),
-          onPressed: () => context.goNamed('hosts'),
+          tooltip: _sidebarVisible ? '호스트 목록 숨기기' : '호스트 목록 보기',
+          icon: Icon(_sidebarVisible ? Icons.menu_open : Icons.menu),
+          onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
         ),
-        title: Text(sessions[index].request.displayName),
+        titleSpacing: 0,
+        // Connection tabs, top-right (scrolls when they overflow).
+        title: SizedBox(
+          height: 46,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              reverse: true,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < sessions.length; i++)
+                    _Tab(
+                      session: sessions[i],
+                      accent: sessionAccent(i),
+                      selected: i == index,
+                      onTap: () => setState(() => _index = i),
+                      onClose: () => _close(sessions[i].id, sessions.length),
+                      onDuplicate: () => _duplicate(sessions[i]),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'New connection',
@@ -58,39 +89,44 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
             onPressed: () => context.pushNamed('connect'),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(44),
-          child: SizedBox(
-            height: 44,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              // First slot is a Home tab that returns to the host list.
-              itemCount: sessions.length + 1,
-              itemBuilder: (context, i) {
-                if (i == 0) {
-                  return _HomeTab(onTap: () => context.goNamed('hosts'));
-                }
-                final s = i - 1;
-                return _Tab(
-                  session: sessions[s],
-                  selected: s == index,
-                  onTap: () => setState(() => _index = s),
-                  onClose: () => _close(sessions[s].id, sessions.length),
-                );
-              },
+      ),
+      body: Row(
+        children: [
+          if (_sidebarVisible) ...[
+            SizedBox(
+              width: 300,
+              child: HostListView(
+                navigateAfterConnect: false,
+                onConnected: () => setState(
+                  () => _index = ref.read(sessionsProvider).length - 1,
+                ),
+              ),
+            ),
+            const VerticalDivider(width: 1),
+          ],
+          Expanded(
+            child: IndexedStack(
+              index: index,
+              children: [
+                for (var i = 0; i < sessions.length; i++)
+                  TerminalSessionView(
+                    key: ValueKey(sessions[i].id),
+                    session: sessions[i],
+                    accent: sessionAccent(i),
+                  ),
+              ],
             ),
           ),
-        ),
-      ),
-      body: IndexedStack(
-        index: index,
-        children: [
-          for (final s in sessions)
-            TerminalSessionView(key: ValueKey(s.id), session: s),
         ],
       ),
     );
+  }
+
+  /// Opens another session to the same host as [s] (right-click "duplicate").
+  void _duplicate(TerminalSession s) {
+    final verifier = buildHostKeyVerifier(ref.read(knownHostsProvider));
+    ref.read(sessionsProvider.notifier).open(s.request, verifyHostKey: verifier);
+    setState(() => _index = ref.read(sessionsProvider).length - 1);
   }
 
   void _close(String id, int count) {
@@ -103,53 +139,22 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
   }
 }
 
-class _HomeTab extends StatelessWidget {
-  const _HomeTab({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-      child: Material(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.home_outlined,
-                    size: 18, color: scheme.onSurfaceVariant),
-                const SizedBox(width: 6),
-                Text('Home',
-                    style: TextStyle(color: scheme.onSurfaceVariant)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _Tab extends StatelessWidget {
   const _Tab({
     required this.session,
+    required this.accent,
     required this.selected,
     required this.onTap,
     required this.onClose,
+    required this.onDuplicate,
   });
 
   final TerminalSession session;
+  final Color accent;
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback onClose;
+  final VoidCallback onDuplicate;
 
   @override
   Widget build(BuildContext context) {
@@ -157,30 +162,58 @@ class _Tab extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Material(
-        color: selected ? scheme.secondaryContainer : scheme.surfaceContainerHighest,
+        // Selected tab is strongly tinted with its accent so the active target
+        // is obvious; the same accent marks the terminal header/border.
+        color: selected
+            ? accent.withValues(alpha: 0.30)
+            : scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 10, right: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedBuilder(
-                  animation: session.controller,
-                  builder: (context, _) => _StatusDot(
-                    status: session.controller.status,
+        // Right-click duplicates this host into a new tab.
+        child: GestureDetector(
+          onSecondaryTap: onDuplicate,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8, right: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 18,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(session.request.displayName),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 16),
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onClose,
-                ),
-              ],
+                  AnimatedBuilder(
+                    animation: session.controller,
+                    builder: (context, _) =>
+                        _StatusDot(status: session.controller.status),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    session.request.displayName,
+                    style: TextStyle(
+                      fontWeight:
+                          selected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    tooltip: '닫기',
+                    onPressed: onClose,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
