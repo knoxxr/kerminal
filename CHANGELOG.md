@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.2]
+
+### Changed
+- **새 앱 아이콘** — 단조로운 기존 아이콘을 시안→에메랄드→라임의 활기찬 그라디언트에
+  터미널 프롬프트 `>_`(노란 커서 스파크)를 얹은 새 아이콘으로 교체했습니다. 플랫폼
+  아이콘은 릴리스 빌드에서 `assets/icon/app_icon.png`로부터 자동 재생성됩니다.
+
 ## [0.4.1]
 
 ### Changed

@@ -68,4 +68,5 @@ jobs:
 
       - run: flutter pub get
       - run: dart run build_runner build
+      - run: dart run flutter_launcher_icons
       - run: ${{ matrix.build }}
