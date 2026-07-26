@@ -10,6 +10,7 @@ import '../../data/remote/host_sync_service.dart';
 import '../../domain/entities/host.dart';
 import '../terminal/host_key_prompt.dart';
 import 'history_sheets.dart';
+import 'share_group_sheet.dart';
 import 'share_host_sheet.dart';
 
 /// The searchable, grouped host list. Reused both as the main screen body
@@ -208,6 +209,21 @@ class _HostListViewState extends ConsumerState<HostListView> {
                           _collapsed.add(entry.key);
                         }
                       }),
+                      // Share every host in this group that the user owns.
+                      onShareGroup: (signedIn &&
+                              entry.value.any(
+                                (h) => shareInfo[h.id]?.ownedByMe ?? true,
+                              ))
+                          ? () => showShareGroupSheet(
+                              context,
+                              entry.key,
+                              entry.value
+                                  .where(
+                                    (h) => shareInfo[h.id]?.ownedByMe ?? true,
+                                  )
+                                  .toList(),
+                            )
+                          : null,
                     ),
                     if (!_collapsed.contains(entry.key))
                       for (final host in entry.value)
@@ -356,6 +372,7 @@ class _GroupHeader extends StatelessWidget {
     required this.count,
     required this.collapsed,
     required this.onTap,
+    this.onShareGroup,
   });
 
   final String name;
@@ -363,12 +380,15 @@ class _GroupHeader extends StatelessWidget {
   final bool collapsed;
   final VoidCallback onTap;
 
+  /// Shares the whole group; null hides the button (nothing to share here).
+  final VoidCallback? onShareGroup;
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 12, 16, 4),
+        padding: EdgeInsets.fromLTRB(8, 12, onShareGroup != null ? 4 : 16, 4),
         child: Row(
           children: [
             Icon(
@@ -382,6 +402,13 @@ class _GroupHeader extends StatelessWidget {
                 style: Theme.of(context).textTheme.labelSmall,
               ),
             ),
+            if (onShareGroup != null)
+              IconButton(
+                tooltip: '그룹 공유',
+                icon: const Icon(Icons.ios_share, size: 18),
+                visualDensity: VisualDensity.compact,
+                onPressed: onShareGroup,
+              ),
           ],
         ),
       ),

@@ -3,6 +3,14 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.5]
+
+### Added
+- **그룹 단위 공유** — 호스트 목록의 그룹 헤더에 공유 버튼(⤴)을 추가했습니다. 누르면
+  그 그룹에서 내가 소유한 호스트 전체를 한 동료에게 한 번에 초대할 수 있고, 그룹
+  전체에 공유된 동료 목록과 일괄 공유 취소도 제공합니다. (각 호스트는 상대가
+  "수신"해야 목록에 추가되는 기존 초대 방식 그대로.)
+
 ## [0.4.4]
 
 ### Changed
