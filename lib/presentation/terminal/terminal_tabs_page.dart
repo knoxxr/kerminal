@@ -69,14 +69,7 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   for (var i = 0; i < sessions.length; i++)
-                    _Tab(
-                      session: sessions[i],
-                      accent: sessionAccent(i),
-                      selected: i == index,
-                      onTap: () => setState(() => _index = i),
-                      onClose: () => _close(sessions[i].id, sessions.length),
-                      onDuplicate: () => _duplicate(sessions[i]),
-                    ),
+                    _reorderableTab(i, sessions, index),
                 ],
               ),
             ),
@@ -84,9 +77,9 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
         ),
         actions: [
           IconButton(
-            tooltip: 'New connection',
+            tooltip: 'Add host',
             icon: const Icon(Icons.add),
-            onPressed: () => context.pushNamed('connect'),
+            onPressed: () => context.pushNamed('newHost'),
           ),
           IconButton(
             tooltip: 'Settings',
@@ -125,6 +118,58 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
         ],
       ),
     );
+  }
+
+  /// A connection tab that can be dragged left/right to reorder. Dropping it
+  /// onto another tab moves it to that tab's position.
+  Widget _reorderableTab(int i, List<TerminalSession> sessions, int index) {
+    final tab = _Tab(
+      session: sessions[i],
+      accent: sessionAccent(i),
+      selected: i == index,
+      onTap: () => setState(() => _index = i),
+      onClose: () => _close(sessions[i].id, sessions.length),
+      onDuplicate: () => _duplicate(sessions[i]),
+    );
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (details) => details.data != i,
+      onAcceptWithDetails: (details) => _reorder(details.data, i),
+      builder: (context, candidate, rejected) => Draggable<int>(
+        data: i,
+        axis: Axis.horizontal,
+        feedback: Material(
+          color: Colors.transparent,
+          child: Opacity(opacity: 0.9, child: tab),
+        ),
+        childWhenDragging: Opacity(opacity: 0.3, child: tab),
+        // Highlight the left edge while another tab hovers as a drop hint.
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                width: 3,
+                color: candidate.isNotEmpty
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.transparent,
+              ),
+            ),
+          ),
+          child: tab,
+        ),
+      ),
+    );
+  }
+
+  /// Reorders tabs while keeping the currently selected session selected.
+  void _reorder(int from, int to) {
+    final sessions = ref.read(sessionsProvider);
+    if (from < 0 || from >= sessions.length) return;
+    final selectedId = sessions[_index.clamp(0, sessions.length - 1)].id;
+    ref.read(sessionsProvider.notifier).reorder(from, to);
+    final now = ref.read(sessionsProvider);
+    final newIdx = now.indexWhere((s) => s.id == selectedId);
+    setState(() => _index = newIdx < 0 ? 0 : newIdx);
   }
 
   /// Opens another session to the same host as [s] (right-click "duplicate").

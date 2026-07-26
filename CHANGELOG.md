@@ -3,6 +3,14 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.4]
+
+### Changed
+- **탭 드래그로 순서 변경** — 터미널 탭을 좌우로 드래그해 원하는 순서로 재배치할 수
+  있습니다(드롭 위치에 하이라이트 표시, 선택된 탭 유지).
+- **탭 우측 ＋ → 호스트 추가** — 탭 오른쪽의 ＋ 버튼이 이제 호스트 추가 화면을
+  엽니다(기존 빠른 연결 대신).
+
 ## [0.4.3]
 
 ### Changed
