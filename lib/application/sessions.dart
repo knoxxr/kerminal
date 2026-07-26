@@ -73,6 +73,15 @@ class SessionsController extends Notifier<List<TerminalSession>> {
     state = remaining;
   }
 
+  /// Moves the tab at [from] to position [to] (drag-to-reorder).
+  void reorder(int from, int to) {
+    if (from == to || from < 0 || from >= state.length) return;
+    final list = [...state];
+    final item = list.removeAt(from);
+    list.insert(to.clamp(0, list.length), item);
+    state = list;
+  }
+
   /// Recreates the controller for a session and reconnects (same request).
   void reconnect(String id) {
     state = [
