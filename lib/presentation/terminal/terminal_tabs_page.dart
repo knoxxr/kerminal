@@ -110,6 +110,7 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
                     key: ValueKey(sessions[i].id),
                     session: sessions[i],
                     accent: sessionAccent(i),
+                    active: i == index,
                   ),
               ],
             ),
