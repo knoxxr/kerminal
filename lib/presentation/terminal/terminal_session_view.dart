@@ -29,6 +29,7 @@ class TerminalSessionView extends ConsumerStatefulWidget {
   const TerminalSessionView({
     required this.session,
     this.accent = Colors.teal,
+    this.active = false,
     super.key,
   });
 
@@ -37,6 +38,10 @@ class TerminalSessionView extends ConsumerStatefulWidget {
   /// Per-session accent (matches the tab), used for the target-host header and
   /// terminal border so the active connection is unmistakable.
   final Color accent;
+
+  /// Whether this is the currently selected tab. When it flips to true the
+  /// terminal grabs keyboard focus so the user can type immediately.
+  final bool active;
 
   @override
   ConsumerState<TerminalSessionView> createState() =>
@@ -62,6 +67,8 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
       old.session.controller.removeListener(_onStatusChanged);
       _controller.addListener(_onStatusChanged);
     }
+    // Became the selected tab → focus so typing goes here right away.
+    if (!old.active && widget.active) _focusTerminal();
   }
 
   void _onStatusChanged() {

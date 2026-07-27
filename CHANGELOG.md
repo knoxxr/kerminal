@@ -3,6 +3,12 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.7]
+
+### Changed
+- **탭 선택 시 자동 입력 포커스** — 탭을 선택하면 해당 터미널에 키보드 포커스가
+  자동으로 가서, 터미널을 따로 클릭하지 않아도 바로 입력할 수 있습니다.
+
 ## [0.4.6]
 
 ### Changed
