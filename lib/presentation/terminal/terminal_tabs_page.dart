@@ -57,14 +57,13 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
           onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
         ),
         titleSpacing: 0,
-        // Connection tabs, top-right (scrolls when they overflow).
+        // Connection tabs, laid out from the left (scroll right on overflow).
         title: SizedBox(
           height: 46,
           child: Align(
-            alignment: Alignment.centerRight,
+            alignment: Alignment.centerLeft,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              reverse: true,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [

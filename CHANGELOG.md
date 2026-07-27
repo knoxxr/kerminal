@@ -3,6 +3,12 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.6]
+
+### Changed
+- **상단 탭 좌측 정렬** — 터미널 탭이 우측이 아니라 왼쪽부터 배치되고, 넘칠 때
+  오른쪽으로 스크롤됩니다.
+
 ## [0.4.5]
 
 ### Added
