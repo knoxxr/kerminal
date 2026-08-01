@@ -3,6 +3,13 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.4.8]
+
+### Fixed
+- **터미널 상단 겹침 수정** — 대상 호스트 헤더 바로 아래에서 터미널 첫 줄이 잘려
+  헤더와 겹쳐 보이던 문제를 고쳤습니다. 헤더 아래에 터미널 배경색 여백과 구분선을
+  두어 깔끔히 분리했습니다.
+
 ## [0.4.7]
 
 ### Changed
