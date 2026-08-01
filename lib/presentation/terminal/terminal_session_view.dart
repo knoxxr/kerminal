@@ -123,10 +123,16 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
+              color: TerminalThemes.defaultTheme.background,
               border: Border(
                 left: BorderSide(color: widget.accent, width: 3),
               ),
             ),
+            // Small dark inset (terminal background) so the top row — which
+            // xterm renders partially when the height isn't an exact multiple
+            // of the line height — doesn't butt up against the header and look
+            // like it overlaps it.
+            padding: const EdgeInsets.only(top: 6),
             child: TerminalView(
               _controller.terminal,
               focusNode: _focusNode,
@@ -166,7 +172,10 @@ class _TargetHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.16),
-        border: Border(left: BorderSide(color: accent, width: 4)),
+        border: Border(
+          left: BorderSide(color: accent, width: 4),
+          bottom: BorderSide(color: Theme.of(context).dividerColor),
+        ),
       ),
       child: Row(
         children: [
