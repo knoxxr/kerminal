@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'application/session_lifecycle.dart';
 import 'application/settings.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -23,7 +24,8 @@ Future<void> main() async {
         if (cloudReady)
           supabaseClientProvider.overrideWithValue(Supabase.instance.client),
       ],
-      child: const KerminalApp(),
+      // Wraps the app so backgrounded sessions are probed/redialled on resume.
+      child: const SessionLifecycleObserver(child: KerminalApp()),
     ),
   );
 }

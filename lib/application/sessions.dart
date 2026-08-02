@@ -82,26 +82,22 @@ class SessionsController extends Notifier<List<TerminalSession>> {
     state = list;
   }
 
-  /// Recreates the controller for a session and reconnects (same request).
+  /// Redials the session with [id]. The controller (and therefore the terminal
+  /// buffer) is reused, so the scrollback survives the reconnect.
   void reconnect(String id) {
-    state = [
-      for (final s in state)
-        if (s.id == id) _reconnected(s) else s,
-    ];
+    for (final s in state) {
+      if (s.id == id) s.controller.reconnect();
+    }
   }
 
-  TerminalSession _reconnected(TerminalSession old) {
-    _live.remove(old.controller);
-    old.controller.dispose();
-    final controller = SshTerminalController();
-    _live.add(controller);
-    controller.connect(old.request, verifyHostKey: old.verifyHostKey);
-    return TerminalSession(
-      id: old.id,
-      request: old.request,
-      controller: controller,
-      verifyHostKey: old.verifyHostKey,
-    );
+  /// Called when the app returns to the foreground: probes every session and
+  /// redials the ones whose socket died while the process was suspended.
+  /// Sessions are checked concurrently; each one reports through its own
+  /// controller, so there is nothing to await here.
+  void resumeAll() {
+    for (final s in state) {
+      s.controller.ensureAlive();
+    }
   }
 }
 

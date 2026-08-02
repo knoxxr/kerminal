@@ -72,7 +72,10 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
   }
 
   void _onStatusChanged() {
-    if (_controller.status == SshConnectionStatus.connected) {
+    // Only the visible tab may claim focus: several sessions can come up at
+    // once (e.g. every tab redialling after the app returns from the
+    // background), and a hidden one grabbing focus would send typing there.
+    if (widget.active && _controller.status == SshConnectionStatus.connected) {
       _focusTerminal();
     }
   }
