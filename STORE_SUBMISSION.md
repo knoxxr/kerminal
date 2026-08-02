@@ -18,7 +18,7 @@ Kerminal의 Microsoft Store(파트너 센터) 제출 화면에 그대로 붙여�
 |---|---|---|
 | `identity_name` | `kr.minary.kerminal` | 파트너 센터 → 제품 → **제품 ID → 패키지 ID → 패키지/ID/이름**<br>(예: `12345Minary.Kerminal`) |
 | `publisher` | `CN=SMIC` | 같은 화면의 **패키지/ID/게시자**<br>(예: `CN=A1B2C3D4-...-9F8E7D6C5B4A`) |
-| `publisher_display_name` | `Minary` | 같은 화면의 **패키지/속성/PublisherDisplayName** |
+| `publisher_display_name` | `minary` | 계정의 **게시자 표시 이름** — 대소문자까지 일치해야 함 (실제 업로드에서 `SMIC` ≠ `minary` 오류 확인) |
 
 세 값은 **한 글자도 다르면 안 됩니다.** 파트너 센터에서 앱 이름을 예약한 뒤에 확인 가능합니다.
 
@@ -41,8 +41,14 @@ dart run msix:create --store --version 0.4.9.0 `
 
 - 현재 CI 산출물은 **x64 전용**입니다(ARM64 미빌드). ARM 기기에서는 에뮬레이션으로 동작합니다.
 - 최소 OS: **Windows 10 버전 1809 (10.0.17763.0)** — Flutter 데스크톱 요구사항이자 msix 기본값.
-- 선언 기능(capability): `internetClient` **하나뿐**입니다. 제한된 기능(restricted capability)이
-  없으므로 별도 사용 사유서를 낼 필요가 없습니다.
+- 선언 기능(capability): `pubspec.yaml`에는 `internetClient`만 적었지만, msix 패키지가
+  데스크톱 앱에 필요한 **`runFullTrust`(제한된 기능)** 를 자동으로 추가합니다.
+  업로드 시 다음 **경고**가 뜹니다 — 오류가 아니므로 제출은 가능합니다:
+
+  > 다음 제한된 기능은 앱에서 사용하기 전에 승인을 받아야 합니다. runFullTrust.
+
+  Win32 데스크톱 앱을 MSIX로 포장하면 정상적으로 요구되는 기능이며, 심사에서 사유를
+  묻습니다. §9 인증 메모에 설명을 넣어 두었습니다.
 
 ---
 
@@ -410,7 +416,13 @@ fully functional without them; no sign-in wall exists anywhere.
 
 Network use: outbound SSH (TCP, user-specified host/port), HTTPS to GitHub for the
 update manifest, and HTTPS to Supabase only if the user creates an account.
-The app declares only the internetClient capability.
+
+Restricted capability — runFullTrust: Kerminal is a Flutter/Win32 desktop
+application packaged as MSIX. runFullTrust is required for the packaged desktop
+runtime itself; the app does not use it to modify the system, install drivers or
+services, or touch other applications' data. It writes only to its own storage and
+the Windows credential store, and its only outbound traffic is the SSH connections
+the user initiates plus the two HTTPS endpoints above.
 ```
 
 ---

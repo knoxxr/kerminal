@@ -95,7 +95,9 @@ flutter_launcher_icons:
 # (CN=... matching your code-signing certificate).
 msix_config:
   display_name: Kerminal
-  publisher_display_name: Minary
+  # 파트너 센터 계정의 "게시자 표시 이름"과 대소문자까지 정확히 같아야 합니다.
+  # 다르면 업로드 시 "PublisherDisplayName 요소가 게시자 표시 이름과 일치하지 않습니다" 오류.
+  publisher_display_name: minary
   identity_name: kr.minary.kerminal
   # Fallback for local `dart run msix:create`. CI overrides this with --version
   # derived from `version:` above (X.Y.Z+B -> X.Y.Z.B), so the package version
