@@ -3,6 +3,31 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.5.0]
+
+### Changed
+- **브랜드 표기 SMIC → Minary** — 회사명이 노출되던 모든 지점을 바꿨습니다: Windows
+  실행 파일 버전 정보(CompanyName·저작권), macOS "정보" 창 저작권, MSIX 게시자 표시
+  이름, `LICENSE`, 개인정보처리방침. 앱 UI 자체에는 회사명이 표시되는 곳이 없었습니다.
+- **패키지 식별자 `kr.smic.kerminal` → `kr.minary.kerminal`** — Android
+  applicationId·namespace, iOS/macOS 번들 ID, Linux application ID, MSIX identity.
+
+  > ⚠️ **기존 설치본은 자동 업데이트되지 않습니다.** 식별자가 바뀌면 OS가 완전히 다른
+  > 앱으로 인식해 별개로 설치되고, 이전 앱에 저장된 호스트 목록과 시크릿은 새 앱에서
+  > 보이지 않습니다. 업그레이드 전에 이전 버전에서 **설정 → 백업 내보내기**로
+  > `.kerminal` 파일을 만들고, 새 버전에서 가져오기로 복원하세요.
+
+  > Windows 사이드로딩 설치의 **게시자 표기는 아직 "SMIC"** 입니다. 코드사이닝
+  > 인증서(`CN=SMIC`)를 교체하지 않았기 때문이며, 교체 절차와 그 영향은
+  > [DEPLOY.md](DEPLOY.md#windows-msix)에 정리했습니다. 스토어 배포본은 스토어가
+  > 서명하므로 해당되지 않습니다.
+
+### Added
+- **개인정보처리방침** [`PRIVACY.md`](PRIVACY.md) (한국어·영어) — 로컬 저장 항목,
+  계정 사용 시 수집 항목, 종단 간 암호화 범위, 삭제 요청 절차.
+- **Microsoft Store 제출 자료** [`STORE_SUBMISSION.md`](STORE_SUBMISSION.md) —
+  파트너 센터 화면별 입력값, 연령 등급 답변, 등록 정보 문안(ko/en), 인증 메모.
+
 ## [0.4.9]
 
 ### Fixed

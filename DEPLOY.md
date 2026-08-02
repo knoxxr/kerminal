@@ -55,6 +55,19 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
     (GUI로는 .cer 우클릭 → 인증서 설치 → 로컬 컴퓨터 → "신뢰할 수 있는 루트 인증 기관".)
 - **정식 서명/스토어:** 상용 Authenticode(OV/EV) 인증서로 교체하거나 Microsoft Store
   제출(`dart run msix:create --store`, 파트너 센터 계정) 시 경고 없이 설치됩니다.
+- ⚠️ **게시자 표기가 브랜드와 다릅니다.** 앱 브랜드는 `Minary`로 바꿨지만 자체 서명
+  인증서의 subject는 아직 `CN=SMIC`이라, 사이드로딩 설치 대화상자와 서명 정보에는
+  여전히 "SMIC"가 보입니다. 스토어 배포본은 스토어가 서명하므로 영향이 없습니다.
+  자체 배포에서도 "Minary"로 보이게 하려면 인증서를 새로 발급해야 합니다:
+  1. `CN=Minary`로 새 자체 서명 인증서(.pfx/.cer) 생성
+  2. GitHub Actions 시크릿 `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD` 교체,
+     `windows/kerminal-codesign.cer` 갱신
+  3. `pubspec.yaml`의 `msix_config.publisher`를 `"CN=Minary"`로 수정
+     (인증서 subject와 **정확히** 일치해야 함)
+
+  > 게시자가 바뀌면 MSIX 신원이 달라져 **기존 사이드로딩 사용자는 in-place 업데이트가
+  > 불가능**합니다(제거 후 재설치 + 새 인증서 신뢰 필요). 스토어로 전환할 계획이면
+  > 자체 배포용 인증서는 그대로 두는 편이 혼란이 적습니다.
 
 ## macOS (DMG)
 빌드 환경: macOS + Xcode.

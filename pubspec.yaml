@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.4.9+33
+version: 0.5.0+34
 
 environment:
   sdk: ^3.12.2
@@ -95,13 +95,13 @@ flutter_launcher_icons:
 # (CN=... matching your code-signing certificate).
 msix_config:
   display_name: Kerminal
-  publisher_display_name: SMIC
-  identity_name: kr.smic.kerminal
+  publisher_display_name: Minary
+  identity_name: kr.minary.kerminal
   # Fallback for local `dart run msix:create`. CI overrides this with --version
   # derived from `version:` above (X.Y.Z+B -> X.Y.Z.B), so the package version
   # increases every release and Windows can update in place. Keep in sync when
   # building locally.
-  msix_version: 0.4.9.33
+  msix_version: 0.5.0.34
   logo_path: assets/icon/app_icon.png
   capabilities: "internetClient"
   # Must match the signing certificate's subject (windows/kerminal-codesign.cer).

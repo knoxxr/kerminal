@@ -7,7 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 PackageInfo _pkg(String version) => PackageInfo(
       appName: 'Kerminal',
-      packageName: 'kr.smic.kerminal',
+      packageName: 'kr.minary.kerminal',
       version: version,
       buildNumber: '1',
     );

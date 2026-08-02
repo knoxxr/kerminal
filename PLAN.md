@@ -52,7 +52,7 @@ Termius와 유사한 크로스플랫폼 SSH 클라이언트를 개발한다.
 - [x] Flutter 프로젝트 생성, 5개 플랫폼 빌드 확인 (web 빌드 검증)
 - [x] 폴더 구조(Clean Architecture) + Riverpod/드리프트 스캐폴딩
 - [x] CI(GitHub Actions): 포맷·분석·테스트, 플랫폼별 빌드
-- [x] 앱 이름(kerminal) / org(kr.smic) 확정 — 아이콘은 후속
+- [x] 앱 이름(kerminal) / org(kr.minary) 확정 — 아이콘은 후속
 
 ### Phase 1 — 터미널 코어 (2주) ✅ 완료
 - [x] `xterm.dart` 터미널 위젯 통합, 스크롤백(10k)

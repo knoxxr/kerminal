@@ -1,4 +1,4 @@
-package kr.smic.kerminal
+package kr.minary.kerminal
 
 import io.flutter.embedding.android.FlutterActivity
 
