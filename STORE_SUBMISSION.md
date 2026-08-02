@@ -14,28 +14,55 @@ Kerminal의 Microsoft Store(파트너 센터) 제출 화면에 그대로 붙여�
 
 현재 `pubspec.yaml`의 값은 자체 배포(사이드로딩)용입니다.
 
-| msix_config 항목 | 현재 값 | 스토어 제출 값 |
+파트너 센터 → 제품 → **제품 ID** 화면에서 발급된 값(확인 완료):
+
+| msix_config 항목 | 사이드로딩 값(pubspec) | **스토어 제출 값** |
 |---|---|---|
-| `identity_name` | `kr.minary.kerminal` | 파트너 센터 → 제품 → **제품 ID → 패키지 ID → 패키지/ID/이름**<br>(예: `12345Minary.Kerminal`) |
-| `publisher` | `CN=SMIC` | 같은 화면의 **패키지/ID/게시자**<br>(예: `CN=A1B2C3D4-...-9F8E7D6C5B4A`) |
-| `publisher_display_name` | `minary` | 계정의 **게시자 표시 이름** — 대소문자까지 일치해야 함 (실제 업로드에서 `SMIC` ≠ `minary` 오류 확인) |
+| `identity_name` | `kr.minary.kerminal` | **`minary.Kerminal`** |
+| `publisher` | `CN=SMIC` (자체 서명 인증서) | **`CN=C460CD23-2642-4BA2-A332-6F8ADBE54E1F`** |
+| `publisher_display_name` | `minary` | **`minary`** — 대소문자까지 일치 (업로드에서 `SMIC` ≠ `minary` 오류로 확인) |
+
+스토어 값은 `store-package.yml` 워크플로의 기본 입력값으로 넣어 두었으므로 그대로
+실행하면 됩니다. `pubspec.yaml`은 사이드로딩 배포용이라 바꾸지 않습니다.
+
+참고 (제품 ID 화면):
+
+| 항목 | 값 |
+|---|---|
+| Package Family Name | `minary.Kerminal_ws153ybhdqgam` |
+| Store ID | `9P23N0L20CTR` |
+| 스토어 URL | https://apps.microsoft.com/detail/9P23N0L20CTR |
 
 세 값은 **한 글자도 다르면 안 됩니다.** 파트너 센터에서 앱 이름을 예약한 뒤에 확인 가능합니다.
 
 ### (2) 버전의 마지막 자리는 반드시 `0`
 
 스토어는 MSIX 버전의 **네 번째(리비전) 자리를 예약**하며 `0`이 아니면 거부합니다.
-현재 CI는 `X.Y.Z+B` → `X.Y.Z.B` (지금은 `0.4.9.33`)로 만들기 때문에 그대로는 통과하지 못합니다.
+릴리스 CI는 `X.Y.Z+B` → `X.Y.Z.B` (지금은 `0.5.0.34`)로 만들기 때문에
+**GitHub 릴리스에 붙는 msix는 스토어에 올릴 수 없습니다.**
 
-- 스토어용 빌드는 `--version 0.4.9.0`으로 만들고, 다음 릴리스는 `0.5.0.0`처럼 **앞 세 자리**를 올립니다.
-- 스토어 제출본은 서명하지 않습니다(스토어가 서명). 로컬에서:
+- 스토어용은 `--version 0.5.0.0`으로 따로 빌드하고, 다음 제출은 `0.5.1.0`처럼 앞 세 자리를 올립니다.
+- 스토어 제출본은 서명하지 않습니다(스토어가 서명). `--store`를 쓰면
+  `install_certificate`/자체 서명 인증서는 무시됩니다.
+
+### (2-1) 스토어용 패키지 만드는 법
+
+MSIX는 **Windows에서만** 빌드됩니다. 맥/리눅스만 쓴다면 GitHub Actions의
+**Store package (MSIX)** 워크플로를 Actions 탭에서 `Run workflow`로 실행하세요
+(`.github/workflows/store-package.yml`). 위 표의 세 값 + 버전을 입력받아 서명 없는
+스토어용 패키지를 만들고, **업로드 전에 매니페스트의 Identity/Publisher/Version/
+PublisherDisplayName을 로그에 출력**해 확인시켜 줍니다. 결과물은
+`kerminal-store-msix` 아티팩트로 내려받습니다.
+
+Windows PC에서 직접 만들 경우:
 
 ```powershell
-dart run msix:create --store --version 0.4.9.0 `
+dart run msix:create --store --version 0.5.0.0 `
+  --identity-name "<파트너 센터 패키지/ID/이름>" `
+  --publisher "<파트너 센터 패키지/ID/게시자>" `
+  --publisher-display-name "minary" `
   --windows-build-args "--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=..."
 ```
-
-`--store`를 쓰면 `install_certificate`/자체 서명 인증서는 무시됩니다.
 
 ### (3) 아키텍처 / 최소 OS 확인
 
