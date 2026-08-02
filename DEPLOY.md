@@ -23,6 +23,14 @@ dart run flutter_launcher_icons
 ---
 
 ## Windows (MSIX)
+
+> **Windows는 Microsoft Store 전용으로 배포합니다.**
+> 태그 릴리스(`release.yml`)는 더 이상 msix/인증서를 만들지 않습니다 — Windows 빌드
+> 검증은 PR CI(`ci.yml`)가 계속 담당합니다. 스토어 제출본은 Actions의
+> **Store package (MSIX)** 워크플로로 만들고, 절차는
+> [STORE_SUBMISSION.md](STORE_SUBMISSION.md)를 따릅니다.
+> 아래 자체 서명·사이드로딩 내용은 **로컬 테스트용**으로만 남겨 둡니다.
+
 빌드 환경: Windows + Visual Studio Build Tools + **C++ ATL 컴포넌트**.
 ```powershell
 # ATL 설치 (최초 1회, 관리자)

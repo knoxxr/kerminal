@@ -423,7 +423,44 @@ terminal emulator
 - 로그인 **세션 토큰이 기기에 저장**됩니다.
 - 접속 로그·명령 기록은 로컬에도 저장하지 않습니다(DB 스키마에 해당 테이블 없음).
 
-## 9. 인증 담당자에게 보내는 메모 (Notes for certification)
+## 9. 제출 옵션 화면
+
+### 9-1. 제한된 기능 `runFullTrust` 사용 사유 (필수 입력)
+
+"다음이 필요한 이유는 무엇인가요? runFullTrust 기능 및 제품에서 어떻게 사용되나요?"
+칸에 그대로 붙여넣습니다. 요지는 ① 권한이 탐나서가 아니라 Win32 데스크톱 앱을
+MSIX로 포장하면 필수로 붙는다 ② 실제 사용처는 평범한 데스크톱 기능뿐 ③ 드라이버·
+서비스·권한 상승·타 프로세스 접근은 하지 않는다 — 심사자가 확인하려는 건 ③입니다.
+
+```
+Kerminal is a Flutter desktop application packaged as MSIX. Its executable is a
+native Win32 runner hosting the Flutter engine, so the product is a classic
+desktop application rather than a UWP app and cannot run inside the AppContainer
+sandbox. runFullTrust is therefore declared by the standard desktop MSIX
+packaging tool (dart run msix:create) as a requirement of the packaging model
+itself, not to obtain any specific system privilege.
+
+Full trust is used only for ordinary desktop functionality:
+
+1. Outbound TCP connections to SSH servers that the user explicitly configures.
+   This is the core purpose of the product - an SSH terminal client.
+2. Storing SSH passwords and private keys in the Windows credential store via the
+   OS credential API, so that secrets are never kept in a plaintext file.
+3. Reading and writing the application's own SQLite database and settings inside
+   its per-user application data folder.
+4. Standard file open/save dialogs, used for the app's passphrase-encrypted
+   backup export and import.
+5. Opening the user's default browser for release notes and the update page.
+
+Kerminal does not install drivers or services, does not request elevation, does
+not modify system settings, does not read or write other applications' data, and
+does not launch or inject code into other processes. All outbound traffic is
+either an SSH connection initiated by the user or HTTPS to two documented
+endpoints: GitHub (update manifest) and Supabase (optional account sync, which
+the user must opt into by creating an account).
+```
+
+### 9-2. 인증 담당자에게 보내는 메모 (Notes for certification)
 
 ```
 Kerminal is an SSH terminal client. To exercise the main feature the tester needs

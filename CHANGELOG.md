@@ -6,6 +6,11 @@ All notable changes to Kerminal are documented here. Format loosely follows
 ## [0.5.0]
 
 ### Changed
+- **Windows 배포처가 Microsoft Store로 바뀝니다** — 태그 릴리스에는 더 이상 `.msix`와
+  코드사이닝 인증서가 첨부되지 않고, Windows는
+  [Microsoft Store](https://apps.microsoft.com/detail/9P23N0L20CTR)에서 받습니다.
+  앱 내 업데이트 확인도 Windows에서는 스토어 페이지를 엽니다. 다른 플랫폼(macOS ·
+  Linux · Android · Web)은 그대로 GitHub 릴리스에서 받습니다.
 - **브랜드 표기 SMIC → Minary** — 회사명이 노출되던 모든 지점을 바꿨습니다: Windows
   실행 파일 버전 정보(CompanyName·저작권), macOS "정보" 창 저작권, MSIX 게시자 표시
   이름, `LICENSE`, 개인정보처리방침. 앱 UI 자체에는 회사명이 표시되는 곳이 없었습니다.
