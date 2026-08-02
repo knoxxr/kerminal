@@ -14,11 +14,24 @@ Kerminal의 Microsoft Store(파트너 센터) 제출 화면에 그대로 붙여�
 
 현재 `pubspec.yaml`의 값은 자체 배포(사이드로딩)용입니다.
 
-| msix_config 항목 | 현재 값 | 스토어 제출 값 |
+파트너 센터 → 제품 → **제품 ID** 화면에서 발급된 값(확인 완료):
+
+| msix_config 항목 | 사이드로딩 값(pubspec) | **스토어 제출 값** |
 |---|---|---|
-| `identity_name` | `kr.minary.kerminal` | 파트너 센터 → 제품 → **제품 ID → 패키지 ID → 패키지/ID/이름**<br>(예: `12345Minary.Kerminal`) |
-| `publisher` | `CN=SMIC` | 같은 화면의 **패키지/ID/게시자**<br>(예: `CN=A1B2C3D4-...-9F8E7D6C5B4A`) |
-| `publisher_display_name` | `minary` | 계정의 **게시자 표시 이름** — 대소문자까지 일치해야 함 (실제 업로드에서 `SMIC` ≠ `minary` 오류 확인) |
+| `identity_name` | `kr.minary.kerminal` | **`minary.Kerminal`** |
+| `publisher` | `CN=SMIC` (자체 서명 인증서) | **`CN=C460CD23-2642-4BA2-A332-6F8ADBE54E1F`** |
+| `publisher_display_name` | `minary` | **`minary`** — 대소문자까지 일치 (업로드에서 `SMIC` ≠ `minary` 오류로 확인) |
+
+스토어 값은 `store-package.yml` 워크플로의 기본 입력값으로 넣어 두었으므로 그대로
+실행하면 됩니다. `pubspec.yaml`은 사이드로딩 배포용이라 바꾸지 않습니다.
+
+참고 (제품 ID 화면):
+
+| 항목 | 값 |
+|---|---|
+| Package Family Name | `minary.Kerminal_ws153ybhdqgam` |
+| Store ID | `9P23N0L20CTR` |
+| 스토어 URL | https://apps.microsoft.com/detail/9P23N0L20CTR |
 
 세 값은 **한 글자도 다르면 안 됩니다.** 파트너 센터에서 앱 이름을 예약한 뒤에 확인 가능합니다.
 

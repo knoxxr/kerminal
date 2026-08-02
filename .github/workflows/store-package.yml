@@ -14,12 +14,16 @@ name: Store package (MSIX)
 on:
   workflow_dispatch:
     inputs:
+      # 기본값은 파트너 센터 → 제품 → 제품 ID 화면의 실제 발급값입니다.
+      # (공개 정보 — 게시된 모든 패키지의 매니페스트에 그대로 들어갑니다.)
       identity_name:
-        description: '패키지/ID/이름 — 파트너 센터 → 제품 → 제품 ID (예: 12345Minary.Kerminal)'
+        description: '패키지/ID/이름'
         required: true
+        default: 'minary.Kerminal'
       publisher:
-        description: '패키지/ID/게시자 — 같은 화면 (예: CN=A1B2C3D4-....)'
+        description: '패키지/ID/게시자'
         required: true
+        default: 'CN=C460CD23-2642-4BA2-A332-6F8ADBE54E1F'
       publisher_display_name:
         description: '계정의 게시자 표시 이름 (대소문자까지 일치)'
         required: true
