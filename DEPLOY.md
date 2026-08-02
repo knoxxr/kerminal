@@ -55,6 +55,10 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
     (GUI로는 .cer 우클릭 → 인증서 설치 → 로컬 컴퓨터 → "신뢰할 수 있는 루트 인증 기관".)
 - **정식 서명/스토어:** 상용 Authenticode(OV/EV) 인증서로 교체하거나 Microsoft Store
   제출(`dart run msix:create --store`, 파트너 센터 계정) 시 경고 없이 설치됩니다.
+  - 태그 릴리스에 붙는 `kerminal.msix`는 **사이드로딩 전용**입니다. 스토어는 이 패키지의
+    identity·게시자·버전(4번째 자리)을 모두 거부합니다. 스토어 제출본은 Actions의
+    **Store package (MSIX)** 워크플로(`.github/workflows/store-package.yml`)를 수동
+    실행해 만드세요. 입력값과 제출 절차는 [STORE_SUBMISSION.md](STORE_SUBMISSION.md) 참고.
 - ⚠️ **게시자 표기가 브랜드와 다릅니다.** 앱 브랜드는 `Minary`로 바꿨지만 자체 서명
   인증서의 subject는 아직 `CN=SMIC`이라, 사이드로딩 설치 대화상자와 서명 정보에는
   여전히 "SMIC"가 보입니다. 스토어 배포본은 스토어가 서명하므로 영향이 없습니다.

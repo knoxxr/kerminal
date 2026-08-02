@@ -25,17 +25,31 @@ Kerminal의 Microsoft Store(파트너 센터) 제출 화면에 그대로 붙여�
 ### (2) 버전의 마지막 자리는 반드시 `0`
 
 스토어는 MSIX 버전의 **네 번째(리비전) 자리를 예약**하며 `0`이 아니면 거부합니다.
-현재 CI는 `X.Y.Z+B` → `X.Y.Z.B` (지금은 `0.4.9.33`)로 만들기 때문에 그대로는 통과하지 못합니다.
+릴리스 CI는 `X.Y.Z+B` → `X.Y.Z.B` (지금은 `0.5.0.34`)로 만들기 때문에
+**GitHub 릴리스에 붙는 msix는 스토어에 올릴 수 없습니다.**
 
-- 스토어용 빌드는 `--version 0.4.9.0`으로 만들고, 다음 릴리스는 `0.5.0.0`처럼 **앞 세 자리**를 올립니다.
-- 스토어 제출본은 서명하지 않습니다(스토어가 서명). 로컬에서:
+- 스토어용은 `--version 0.5.0.0`으로 따로 빌드하고, 다음 제출은 `0.5.1.0`처럼 앞 세 자리를 올립니다.
+- 스토어 제출본은 서명하지 않습니다(스토어가 서명). `--store`를 쓰면
+  `install_certificate`/자체 서명 인증서는 무시됩니다.
+
+### (2-1) 스토어용 패키지 만드는 법
+
+MSIX는 **Windows에서만** 빌드됩니다. 맥/리눅스만 쓴다면 GitHub Actions의
+**Store package (MSIX)** 워크플로를 Actions 탭에서 `Run workflow`로 실행하세요
+(`.github/workflows/store-package.yml`). 위 표의 세 값 + 버전을 입력받아 서명 없는
+스토어용 패키지를 만들고, **업로드 전에 매니페스트의 Identity/Publisher/Version/
+PublisherDisplayName을 로그에 출력**해 확인시켜 줍니다. 결과물은
+`kerminal-store-msix` 아티팩트로 내려받습니다.
+
+Windows PC에서 직접 만들 경우:
 
 ```powershell
-dart run msix:create --store --version 0.4.9.0 `
+dart run msix:create --store --version 0.5.0.0 `
+  --identity-name "<파트너 센터 패키지/ID/이름>" `
+  --publisher "<파트너 센터 패키지/ID/게시자>" `
+  --publisher-display-name "minary" `
   --windows-build-args "--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=..."
 ```
-
-`--store`를 쓰면 `install_certificate`/자체 서명 인증서는 무시됩니다.
 
 ### (3) 아키텍처 / 최소 OS 확인
 

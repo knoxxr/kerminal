@@ -1,0 +1,109 @@
+name: Store package (MSIX)
+
+# Builds an UNSIGNED, Store-ready MSIX for Microsoft Partner Center and uploads
+# it as a workflow artifact. Run it from the Actions tab ("Run workflow").
+#
+# Why this is separate from release.yml: that workflow produces the sideload
+# installer — self-signed (CN=SMIC), identity `kr.minary.kerminal`, and a 4-part
+# version whose last digit is the build number. Partner Center rejects all three:
+#   * PublisherDisplayName must equal the account's publisher display name
+#   * Identity Name / Publisher must be the values Partner Center issued
+#   * the version's 4th part is reserved by the Store and must be 0
+# The Store signs the package itself, so this build is deliberately unsigned.
+
+on:
+  workflow_dispatch:
+    inputs:
+      identity_name:
+        description: '패키지/ID/이름 — 파트너 센터 → 제품 → 제품 ID (예: 12345Minary.Kerminal)'
+        required: true
+      publisher:
+        description: '패키지/ID/게시자 — 같은 화면 (예: CN=A1B2C3D4-....)'
+        required: true
+      publisher_display_name:
+        description: '계정의 게시자 표시 이름 (대소문자까지 일치)'
+        required: true
+        default: minary
+      version:
+        description: 'MSIX 버전 X.Y.Z.0 — 마지막 자리는 반드시 0'
+        required: true
+        default: '0.5.0.0'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build Store MSIX
+    runs-on: windows-latest
+    # Same cloud credentials the release build bakes in, so the Store build
+    # behaves identically to the published app.
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - run: dart run flutter_launcher_icons
+
+      # Fail fast on the mistake the Store rejects most often.
+      - name: Validate version
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ($env:VERSION -notmatch '^\d+\.\d+\.\d+\.0$') {
+            throw "버전은 X.Y.Z.0 형식이어야 합니다 (입력: $env:VERSION). 스토어가 4번째 자리를 예약합니다."
+          }
+
+      # Inputs are passed through env (never interpolated into the script) so a
+      # value containing shell metacharacters can't alter the command.
+      - name: Build Store MSIX (unsigned)
+        shell: pwsh
+        env:
+          IDENTITY_NAME: ${{ inputs.identity_name }}
+          PUBLISHER: ${{ inputs.publisher }}
+          PUBLISHER_DISPLAY_NAME: ${{ inputs.publisher_display_name }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          $defs = "--dart-define=SUPABASE_URL=$($env:SUPABASE_URL) --dart-define=SUPABASE_ANON_KEY=$($env:SUPABASE_ANON_KEY)"
+          dart run msix:create --store `
+            --version "$env:VERSION" `
+            --identity-name "$env:IDENTITY_NAME" `
+            --publisher "$env:PUBLISHER" `
+            --publisher-display-name "$env:PUBLISHER_DISPLAY_NAME" `
+            --windows-build-args "$defs"
+
+      # Print exactly the four fields Partner Center validates, so a mismatch is
+      # caught here instead of after a 20 MB upload.
+      - name: Verify manifest identity
+        shell: pwsh
+        run: |
+          $msix = Get-ChildItem build/windows/x64/runner/Release/*.msix | Select-Object -First 1
+          if (-not $msix) { throw 'MSIX를 찾지 못했습니다.' }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [IO.Compression.ZipFile]::OpenRead($msix.FullName)
+          try {
+            $entry = $zip.Entries | Where-Object { $_.FullName -eq 'AppxManifest.xml' }
+            $reader = New-Object IO.StreamReader($entry.Open())
+            $xml = [xml]$reader.ReadToEnd()
+            $reader.Close()
+          } finally { $zip.Dispose() }
+          Write-Host "file                 : $($msix.Name) ($([math]::Round($msix.Length/1MB,2)) MB)"
+          Write-Host "Identity/Name        : $($xml.Package.Identity.Name)"
+          Write-Host "Identity/Publisher   : $($xml.Package.Identity.Publisher)"
+          Write-Host "Identity/Version     : $($xml.Package.Identity.Version)"
+          Write-Host "PublisherDisplayName : $($xml.Package.Properties.PublisherDisplayName)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kerminal-store-msix
+          path: build/windows/x64/runner/Release/*.msix
+          if-no-files-found: error
