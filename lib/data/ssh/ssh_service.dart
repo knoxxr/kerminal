@@ -34,6 +34,9 @@ class SshSession {
     required SshConnectionRequest request,
     HostKeyVerifier? verifyHostKey,
     Duration timeout = const Duration(seconds: 15),
+    // Mobile carriers and NAT gateways drop idle TCP flows within a minute or
+    // so, which is exactly what happens while the app sits in the background.
+    Duration keepAliveInterval = const Duration(seconds: 20),
   }) async {
     final socket = await SSHSocket.connect(
       request.host,
@@ -44,6 +47,7 @@ class SshSession {
     final client = SSHClient(
       socket,
       username: request.username,
+      keepAliveInterval: keepAliveInterval,
       // dartssh2 passes (keyType, fingerprintBytes); the fingerprint is the
       // OpenSSH "SHA256:..." string. Null verifier => trust on first use.
       onVerifyHostKey: verifyHostKey == null
@@ -94,6 +98,23 @@ class SshSession {
     terminal.onResize = (w, h, pw, ph) => session.resizeTerminal(w, h, pw, ph);
 
     return SshSession._(client, session);
+  }
+
+  bool get isClosed => _client.isClosed;
+
+  /// Round-trips a keep-alive to find out whether the link is *really* alive.
+  ///
+  /// A socket killed while the app was suspended often looks open from this
+  /// side until the next write times out, so [done] may not have fired yet.
+  /// Returns false when the server doesn't answer within [timeout].
+  Future<bool> isAlive({Duration timeout = const Duration(seconds: 5)}) async {
+    if (_client.isClosed) return false;
+    try {
+      await _client.ping().timeout(timeout);
+      return !_client.isClosed;
+    } catch (_) {
+      return false;
+    }
   }
 
   void close() {
