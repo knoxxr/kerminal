@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/platform/session_keep_alive.dart';
 import 'sessions.dart';
 
 /// Keeps open SSH sessions usable across app switches.
 ///
-/// Mobile OSes suspend the process when the user leaves the app. Android
-/// usually keeps the socket (the keep-alive in `SshSession` stops carrier NAT
-/// from reaping the idle flow), but iOS tears it down, so a tab that was
-/// connected comes back dead. On [AppLifecycleState.resumed] every session is
-/// probed and silently redialled when its link is gone — the tabs, their order
-/// and their scrollback all stay put.
+/// On Android the sessions are meant to *survive* the app switch: a foreground
+/// service ([SessionKeepAlive]) holds the process so the sockets stay open. iOS
+/// suspends the process regardless, so there a tab comes back dead.
+///
+/// Either way, on [AppLifecycleState.resumed] every session is probed and
+/// silently redialled when its link turns out to be gone — the tabs, their order
+/// and their scrollback all stay put. This is the safety net for the cases the
+/// keep-alive can't cover (iOS, or Android killing the process anyway).
 ///
 /// Sessions themselves live in the global [sessionsProvider], so leaving the
 /// terminal route never closes them; only this resume check is needed.
@@ -31,6 +34,9 @@ class _SessionLifecycleObserverState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // A keep-alive service can outlive the isolate that started it; this run has
+    // no sessions yet, so clear any orphaned one.
+    SessionKeepAlive.reset();
   }
 
   @override

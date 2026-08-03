@@ -108,6 +108,17 @@ flutter_distributor release --name linux --jobs linux-appimage
 ```
 
 ## Android (APK / AAB)
+
+> **포그라운드 서비스 선언 주의 (Play Store 제출 시):**
+> 앱 전환 중에도 SSH 세션을 유지하려고 `SessionKeepAliveService`가
+> `foregroundServiceType="specialUse"`로 선언돼 있습니다(`AndroidManifest.xml`).
+> `dataSync`를 쓰지 않는 이유는 **안드로이드 15+에서 dataSync가 하루 6시간으로
+> 제한**되어 장시간 셸이 조용히 끊기기 때문입니다.
+> Play Store에 올릴 때는 `specialUse` 사용 사유를 콘솔에서 심사받아야 하며,
+> 매니페스트의 `PROPERTY_SPECIAL_USE_FGS_SUBTYPE` 문구를 그대로 제출하면 됩니다.
+> 심사에서 거부되면 `dataSync`로 바꿀 수 있으나 위 6시간 제한을 받습니다.
+> (GitHub APK 직접 배포에는 아무 제약이 없습니다.)
+
 빌드 환경: Android SDK(+cmdline-tools) + JDK 17.
 1. 릴리스 키스토어 생성:
    ```bash
