@@ -1,6 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Required for SSH connections and update checks in release builds. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Keeps the process (and therefore open SSH sockets) alive while the user
+         is in another app. Without it Android reclaims the process and every
+         session dies. See SessionKeepAliveService. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <!-- Android 13+: only affects whether the keep-alive notification is shown;
+         the service runs regardless. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="Kerminal"
         android:name="${applicationName}"
@@ -27,6 +35,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Holds the process open while sessions are connected.
+             `specialUse` rather than `dataSync`: on Android 15+ dataSync
+             services are capped at 6 hours per day, which would silently drop
+             long-running shells. -->
+        <service
+            android:name=".SessionKeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Maintains user-initiated SSH terminal sessions (long-lived TCP connections) so the remote shells stay alive while the user switches to another app." />
+        </service>
+
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../data/platform/session_keep_alive.dart';
 import '../data/ssh/ssh_service.dart';
 import '../domain/entities/ssh_connection_request.dart';
 import 'ssh_terminal_controller.dart';
@@ -35,6 +36,7 @@ class SessionsController extends Notifier<List<TerminalSession>> {
         c.dispose();
       }
       _live.clear();
+      SessionKeepAlive.sync(0);
     });
     return const [];
   }
@@ -57,6 +59,8 @@ class SessionsController extends Notifier<List<TerminalSession>> {
       ),
     ];
     controller.connect(request, verifyHostKey: verifyHostKey);
+    // Hold the process open (Android) so this socket survives an app switch.
+    SessionKeepAlive.sync(state.length);
     return id;
   }
 
@@ -71,6 +75,8 @@ class SessionsController extends Notifier<List<TerminalSession>> {
       }
     }
     state = remaining;
+    // Drops the keep-alive notification once the last tab is gone.
+    SessionKeepAlive.sync(state.length);
   }
 
   /// Moves the tab at [from] to position [to] (drag-to-reorder).
