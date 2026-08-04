@@ -10,7 +10,7 @@ Termius 유사 크로스플랫폼 SSH/터미널 클라이언트. Flutter 단일 
 
 | 플랫폼 | 아티팩트 | 비고 |
 |--------|----------|------|
-| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9P23N0L20CTR) | **스토어 전용** — GitHub 릴리스에는 Windows 아티팩트가 없습니다 |
+| Windows | [Microsoft Store](https://apps.microsoft.com/detail/9P23N0L20CTR) · [`.msix`](https://github.com/knoxxr/kerminal/releases/latest) | 스토어는 자동 업데이트·서명 완료. `.msix` 직접 설치 시 최초 1회 `kerminal-codesign.cer`를 **"신뢰할 수 있는 루트 인증 기관"**에 설치 ([DEPLOY.md](DEPLOY.md#windows-msix)) |
 | macOS | [`.dmg`](https://github.com/knoxxr/kerminal/releases/latest) | Apple 서명·공증 필요 |
 | Linux | [`.AppImage` / `.deb`](https://github.com/knoxxr/kerminal/releases/latest) | |
 | Android | [`.apk` / `.aab`](https://github.com/knoxxr/kerminal/releases/latest) | Play Store: `.aab` |

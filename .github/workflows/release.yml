@@ -15,11 +15,10 @@ jobs:
     name: Build ${{ matrix.target }}
     strategy:
       fail-fast: false
-      # Windows is intentionally absent: it ships exclusively through the
-      # Microsoft Store (see store-package.yml), so no msix is attached here.
-      # The Windows build is still verified on every PR by ci.yml.
       matrix:
         include:
+          - os: windows-latest
+            target: windows
           - os: macos-latest
             target: macos
           - os: ubuntu-latest
@@ -61,6 +60,44 @@ jobs:
       # the released apps always carry the current icon (done in CI since the
       # generated icons aren't committed).
       - run: dart run flutter_launcher_icons
+
+      # --- Windows: MSIX installer, signed with the self-signed cert (CN=Minary).
+      # Same signing path as windows-sideload.yml, which builds this on demand
+      # from any branch without tagging. ---
+      - if: matrix.target == 'windows'
+        shell: pwsh
+        env:
+          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          # Derive the 4-part MSIX version from pubspec's single source of truth
+          # (`version: X.Y.Z+B` -> `X.Y.Z.B`). The pubspec `msix_version` field is
+          # a stale fallback; passing --version here guarantees the package version
+          # increases each release so Windows performs an in-place update instead of
+          # rejecting a same-version/different-content package (0x80073CFB).
+          $raw = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+          $parts = $raw -split '\+'
+          $build = if ($parts.Count -gt 1) { $parts[1] } else { '0' }
+          $msixVer = "$($parts[0]).$build"
+          Write-Host "MSIX version: $msixVer (from pubspec '$raw')"
+          # Inject cloud credentials into the underlying `flutter build windows`.
+          $defs = "--dart-define=SUPABASE_URL=$($env:SUPABASE_URL) --dart-define=SUPABASE_ANON_KEY=$($env:SUPABASE_ANON_KEY)"
+          if ($env:WINDOWS_CERT_BASE64) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64))
+            dart run msix:create --version $msixVer --windows-build-args "$defs" --certificate-path $pfx --certificate-password $env:WINDOWS_CERT_PASSWORD
+          } else {
+            Write-Host 'No signing secret; building with msix test certificate.'
+            dart run msix:create --version $msixVer --windows-build-args "$defs"
+          }
+      - if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/windows/x64/runner/Release/*.msix dist/ -ErrorAction SilentlyContinue
+          if (-not (Test-Path dist/*.msix)) { Compress-Archive build/windows/x64/runner/Release/* dist/kerminal-windows.zip }
+          # Publish the public cert so users can trust it once before installing.
+          Copy-Item windows/kerminal-codesign.cer dist/ -ErrorAction SilentlyContinue
 
       # --- macOS: .app bundle (zip). DMG needs signing/notarization (see DEPLOY.md) ---
       - if: matrix.target == 'macos'
@@ -126,7 +163,7 @@ jobs:
             "version": "${VERSION}",
             "notes": "Kerminal ${VERSION}. See the release page for details.",
             "downloads": {
-              "windows": "https://apps.microsoft.com/detail/9P23N0L20CTR",
+              "windows": "${BASE}/kerminal.msix",
               "macos": "${BASE}/kerminal-macos.zip",
               "linux": "${BASE}/kerminal-linux-x64.tar.gz",
               "android": "${BASE}/kerminal.apk"

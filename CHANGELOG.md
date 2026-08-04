@@ -12,13 +12,21 @@ All notable changes to Kerminal are documented here. Format loosely follows
 
   > **주의:** 게시자는 MSIX 패키지 신원의 일부라, `CN=SMIC`으로 서명된 기존 설치본은
   > **in-place 업데이트가 되지 않습니다.** 제거 후 새 `kerminal-codesign.cer`을
-  > 신뢰하고 재설치해야 합니다. Windows는 Microsoft Store 전용으로 전환했으므로
-  > 영향 범위는 v0.4.8을 사이드로딩으로 설치한 사용자로 한정됩니다.
+  > 신뢰하고 재설치해야 합니다. 영향 범위는 v0.4.8 이하의 `.msix`를 직접 설치한
+  > 사용자로 한정됩니다.
+
+- **Windows `.msix`가 릴리스에 다시 첨부됩니다** — 0.5.0~0.5.2에서 잠시 Microsoft
+  Store 전용으로 두었던 것을 되돌려, 태그 릴리스에서 `kerminal.msix`와
+  `kerminal-codesign.cer`을 다시 받을 수 있습니다. 앱 내 업데이트 확인도 Windows에서
+  다시 릴리스의 msix를 가리킵니다.
+
+  > 스토어 배포본과 GitHub 배포본은 **패키지 신원이 다릅니다**(게시자·identity).
+  > 한쪽으로 설치한 앱을 다른 쪽 패키지로 업데이트할 수 없으니 한 경로를 유지하세요.
 
 ### Added
-- **Windows sideload (MSIX) 워크플로** — 스크린샷 촬영·수동 테스트용으로 서명된
-  설치 가능한 msix를 만듭니다. 릴리스에는 첨부하지 않고 워크플로 아티팩트로만 둡니다
-  (Windows 정식 배포처는 Microsoft Store).
+- **Windows sideload (MSIX) 워크플로** — 태그를 만들지 않고 임의 브랜치에서 서명된
+  설치 가능한 msix를 뽑습니다(스크린샷 촬영·수동 테스트용). 결과물은 워크플로
+  아티팩트로만 남습니다.
 
 ## [0.5.2]
 
