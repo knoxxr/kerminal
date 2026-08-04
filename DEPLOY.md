@@ -31,7 +31,7 @@ dart run flutter_launcher_icons
 > | 용도 | 워크플로 | 산출물 |
 > |---|---|---|
 > | 스토어 제출 | **Store package (MSIX)** (`store-package.yml`) | 서명 없음, 파트너 센터 identity, `X.Y.Z.0` |
-> | 스크린샷·수동 테스트·개별 전달 | **Windows sideload (MSIX)** (`windows-sideload.yml`) | 자체 서명(`CN=SMIC`) + `.cer`, 바로 설치 가능 |
+> | 스크린샷·수동 테스트·개별 전달 | **Windows sideload (MSIX)** (`windows-sideload.yml`) | 자체 서명(`CN=Minary`) + `.cer`, 바로 설치 가능 |
 >
 > 사이드로딩 산출물은 **릴리스에 첨부하지 않습니다** — 공개 다운로드가 생기면 유료
 > 스토어 등록의 의미가 없어지므로, 로그인이 필요한 워크플로 아티팩트로만 둡니다.
@@ -57,7 +57,8 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
 > ```
 > 설치된 툴셋은 `…\BuildTools\VC\Tools\MSVC\`에서, ATL 유무는 각 폴더의
 > `atlmfc\include\atlstr.h` 존재로 확인합니다.
-- **서명(현재):** 자체 서명 코드사이닝 인증서(`CN=SMIC`)로 CI에서 서명합니다.
+- **서명(현재):** 자체 서명 코드사이닝 인증서(`CN=Minary`, RSA-2048/SHA-256, 2036년까지)로
+  CI에서 서명합니다.
   개인키(`.pfx`)는 GitHub Actions 시크릿 `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`,
   공개 인증서는 `windows/kerminal-codesign.cer`(릴리스에 동봉).
   - **최종 사용자 설치 (최초 1회):** 자체 서명 인증서는 스스로가 루트이므로
@@ -66,7 +67,7 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
     ```powershell
     Import-Certificate -FilePath .\kerminal-codesign.cer -CertStoreLocation Cert:\LocalMachine\Root
     ```
-    그런 다음 `kerminal.msix` 실행 → 게시자가 "SMIC"로 확인되어 설치됩니다.
+    그런 다음 `kerminal.msix` 실행 → 게시자가 "Minary"로 확인되어 설치됩니다.
     (GUI로는 .cer 우클릭 → 인증서 설치 → 로컬 컴퓨터 → "신뢰할 수 있는 루트 인증 기관".)
 - **정식 서명/스토어:** 상용 Authenticode(OV/EV) 인증서로 교체하거나 Microsoft Store
   제출(`dart run msix:create --store`, 파트너 센터 계정) 시 경고 없이 설치됩니다.
@@ -74,19 +75,18 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
     identity·게시자·버전(4번째 자리)을 모두 거부합니다. 스토어 제출본은 Actions의
     **Store package (MSIX)** 워크플로(`.github/workflows/store-package.yml`)를 수동
     실행해 만드세요. 입력값과 제출 절차는 [STORE_SUBMISSION.md](STORE_SUBMISSION.md) 참고.
-- ⚠️ **게시자 표기가 브랜드와 다릅니다.** 앱 브랜드는 `Minary`로 바꿨지만 자체 서명
-  인증서의 subject는 아직 `CN=SMIC`이라, 사이드로딩 설치 대화상자와 서명 정보에는
-  여전히 "SMIC"가 보입니다. 스토어 배포본은 스토어가 서명하므로 영향이 없습니다.
-  자체 배포에서도 "Minary"로 보이게 하려면 인증서를 새로 발급해야 합니다:
-  1. `CN=Minary`로 새 자체 서명 인증서(.pfx/.cer) 생성
-  2. GitHub Actions 시크릿 `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD` 교체,
-     `windows/kerminal-codesign.cer` 갱신
-  3. `pubspec.yaml`의 `msix_config.publisher`를 `"CN=Minary"`로 수정
-     (인증서 subject와 **정확히** 일치해야 함)
+- **인증서 교체 기록 (2026-08-04):** 게시자 표기를 브랜드에 맞추기 위해 코드사이닝
+  인증서를 `CN=SMIC` → `CN=Minary`로 재발급했습니다. 시크릿
+  `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`와 `windows/kerminal-codesign.cer`,
+  `pubspec.yaml`의 `msix_config.publisher`를 함께 갱신했습니다.
+  세 값은 **정확히 일치해야** 하며(어긋나면 `msix:create`가 서명 단계에서 실패),
+  이후 인증서를 또 바꿀 때도 셋을 같이 고쳐야 합니다.
 
-  > 게시자가 바뀌면 MSIX 신원이 달라져 **기존 사이드로딩 사용자는 in-place 업데이트가
-  > 불가능**합니다(제거 후 재설치 + 새 인증서 신뢰 필요). 스토어로 전환할 계획이면
-  > 자체 배포용 인증서는 그대로 두는 편이 혼란이 적습니다.
+  > **주의:** 게시자가 바뀌면 MSIX 패키지 신원(identity)이 달라져 **`CN=SMIC`으로
+  > 서명된 기존 설치본은 in-place 업데이트가 불가능**합니다(제거 후 재설치 +
+  > 새 `.cer` 신뢰 필요). Windows는 스토어 전용으로 전환했으므로 영향 범위는
+  > v0.4.8을 사이드로딩으로 설치한 사용자로 한정됩니다.
+  > 이전 `CN=SMIC` 개인키는 시크릿 덮어쓰기로 폐기되었습니다.
 
 ## macOS (DMG)
 빌드 환경: macOS + Xcode.
