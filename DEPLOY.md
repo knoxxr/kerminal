@@ -24,19 +24,19 @@ dart run flutter_launcher_icons
 
 ## Windows (MSIX)
 
-> **Windows는 Microsoft Store 전용으로 배포합니다.**
-> 태그 릴리스(`release.yml`)는 더 이상 msix/인증서를 만들지 않습니다 — Windows 빌드
-> 검증은 PR CI(`ci.yml`)가 계속 담당합니다.
+> **Windows는 두 경로로 배포합니다.**
+> 태그 릴리스(`release.yml`)가 자체 서명 `.msix` + `.cer`을 첨부하고,
+> Microsoft Store에도 별도 패키지를 제출합니다.
 >
 > | 용도 | 워크플로 | 산출물 |
 > |---|---|---|
-> | 스토어 제출 | **Store package (MSIX)** (`store-package.yml`) | 서명 없음, 파트너 센터 identity, `X.Y.Z.0` |
-> | 스크린샷·수동 테스트·개별 전달 | **Windows sideload (MSIX)** (`windows-sideload.yml`) | 자체 서명(`CN=Minary`) + `.cer`, 바로 설치 가능 |
+> | 태그 릴리스 (직접 배포) | `release.yml` | 자체 서명(`CN=Minary`) `.msix` + `.cer`, 버전 `X.Y.Z.B` |
+> | 스토어 제출 | **Store package (MSIX)** (`store-package.yml`) | 서명 없음, 파트너 센터 identity, 버전 `X.Y.Z.0` |
+> | 태그 없이 임의 브랜치 빌드 | **Windows sideload (MSIX)** (`windows-sideload.yml`) | 릴리스와 동일한 서명, 아티팩트로만 |
 >
-> 사이드로딩 산출물은 **릴리스에 첨부하지 않습니다** — 공개 다운로드가 생기면 유료
-> 스토어 등록의 의미가 없어지므로, 로그인이 필요한 워크플로 아티팩트로만 둡니다.
-> 제출 절차는 [STORE_SUBMISSION.md](STORE_SUBMISSION.md) 참고.
-> 아래 수동 빌드 절차는 로컬 개발용입니다.
+> 스토어와 GitHub 배포본은 **패키지 신원이 서로 다릅니다**(게시자·identity). 한쪽에서
+> 설치한 앱을 다른 쪽 패키지로 업데이트할 수 없으니, 사용자는 한 경로를 유지해야 합니다.
+> 스토어 제출 절차는 [STORE_SUBMISSION.md](STORE_SUBMISSION.md) 참고.
 
 빌드 환경: Windows + Visual Studio Build Tools + **C++ ATL 컴포넌트**.
 ```powershell
@@ -71,10 +71,10 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
     (GUI로는 .cer 우클릭 → 인증서 설치 → 로컬 컴퓨터 → "신뢰할 수 있는 루트 인증 기관".)
 - **정식 서명/스토어:** 상용 Authenticode(OV/EV) 인증서로 교체하거나 Microsoft Store
   제출(`dart run msix:create --store`, 파트너 센터 계정) 시 경고 없이 설치됩니다.
-  - 태그 릴리스에 붙는 `kerminal.msix`는 **사이드로딩 전용**입니다. 스토어는 이 패키지의
-    identity·게시자·버전(4번째 자리)을 모두 거부합니다. 스토어 제출본은 Actions의
-    **Store package (MSIX)** 워크플로(`.github/workflows/store-package.yml`)를 수동
-    실행해 만드세요. 입력값과 제출 절차는 [STORE_SUBMISSION.md](STORE_SUBMISSION.md) 참고.
+  - 태그 릴리스에 붙는 `kerminal.msix`는 **직접 배포 전용**입니다. 스토어는 이 패키지의
+    identity·게시자·버전(4번째 자리)을 모두 거부하므로, 제출본은 Actions의
+    **Store package (MSIX)** 워크플로(`.github/workflows/store-package.yml`)로 따로
+    만드세요. 입력값과 제출 절차는 [STORE_SUBMISSION.md](STORE_SUBMISSION.md) 참고.
 - **인증서 교체 기록 (2026-08-04):** 게시자 표기를 브랜드에 맞추기 위해 코드사이닝
   인증서를 `CN=SMIC` → `CN=Minary`로 재발급했습니다. 시크릿
   `WINDOWS_CERT_BASE64`/`WINDOWS_CERT_PASSWORD`와 `windows/kerminal-codesign.cer`,
@@ -84,8 +84,8 @@ dart run msix:create        # → build/windows/x64/runner/Release/*.msix
 
   > **주의:** 게시자가 바뀌면 MSIX 패키지 신원(identity)이 달라져 **`CN=SMIC`으로
   > 서명된 기존 설치본은 in-place 업데이트가 불가능**합니다(제거 후 재설치 +
-  > 새 `.cer` 신뢰 필요). Windows는 스토어 전용으로 전환했으므로 영향 범위는
-  > v0.4.8을 사이드로딩으로 설치한 사용자로 한정됩니다.
+  > 새 `.cer` 신뢰 필요). 영향 범위는 v0.4.8 이하의 `.msix`를 직접 설치한
+  > 사용자로 한정됩니다.
   > 이전 `CN=SMIC` 개인키는 시크릿 덮어쓰기로 폐기되었습니다.
 
 ## macOS (DMG)
