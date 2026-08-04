@@ -35,6 +35,42 @@ flutter run \
 
 VS Code를 쓴다면 `.vscode/launch.json`의 `args`에 `--dart-define=...`을 넣어두면 편합니다.
 
+## 5. 문의 기능 (Edge Function)
+
+앱 **설정 → Support → Contact us** 에서 보낸 문의를 메일로 전달합니다.
+**수신 주소는 이 저장소와 앱 어디에도 없습니다** — 함수의 서버 시크릿에만 둡니다.
+저장소가 공개이고 앱은 사용자에게 배포되므로, `mailto:` 링크나 앱 내 상수로 두면
+주소가 그대로 노출됩니다.
+
+1. 스키마 재적용 (`feedback` 테이블 생성 — `schema.sql`을 다시 실행하면 됩니다)
+2. 메일 발송용 [Resend](https://resend.com) API 키 발급 (무료 티어로 충분)
+3. 함수 배포와 시크릿 설정:
+
+```bash
+supabase link --project-ref <your-project-ref>
+supabase functions deploy send-feedback
+
+supabase secrets set \
+  FEEDBACK_TO='받는사람@example.com' \
+  RESEND_API_KEY='re_...' \
+  FEEDBACK_FROM='Kerminal <onboarding@resend.dev>'
+```
+
+- `FEEDBACK_TO` — 문의를 받을 주소. **이 값만 바꾸면 수신자가 바뀝니다.**
+- `FEEDBACK_FROM` — 보내는 주소. 자체 도메인을 Resend에 인증하기 전에는
+  `onboarding@resend.dev`를 그대로 쓸 수 있습니다(기본값).
+- 함수는 `verify_jwt = false`(`config.toml`)라 **로그인하지 않은 사용자도** 문의할 수
+  있습니다. 익명 스팸을 막기 위해 길이 제한(메시지 5,000자)과 최소 길이 검증이
+  들어 있습니다.
+
+모든 문의는 `public.feedback` 테이블에도 저장됩니다. 메일 발송이 실패해도 내용이
+남으므로, 대시보드 **Table Editor → feedback** 에서 확인할 수 있습니다.
+이 테이블은 RLS가 켜져 있고 **정책이 없어** 클라이언트에서는 읽기·쓰기가 모두
+불가능합니다(함수가 service-role 키로만 기록).
+
+문의에는 메시지·(선택)회신 주소·플랫폼·앱 버전만 담깁니다. 호스트 목록·자격증명·
+터미널 출력은 전송되지 않습니다.
+
 ## 보안 모델 요약
 - 서버에는 **암호문만** 저장됩니다. 호스트 데이터·비밀·개인키의 평문은 서버에 없습니다.
 - 계정마다 X25519 키쌍: 공개키는 `profiles`(공유용, 조회 가능), 개인키는 패스프레이즈로
