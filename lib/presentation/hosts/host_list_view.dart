@@ -90,10 +90,10 @@ class _HostListViewState extends ConsumerState<HostListView> {
     try {
       await sync.acceptInvitation(invite.hostId);
       messenger.showSnackBar(
-        SnackBar(content: Text('"${invite.summary}" 를 목록에 추가했습니다.')),
+        SnackBar(content: Text('Added "${invite.summary}" to your hosts.')),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('수신 실패: $e')));
+      messenger.showSnackBar(SnackBar(content: Text('Could not accept: $e')));
     }
   }
 
@@ -124,12 +124,11 @@ class _HostListViewState extends ConsumerState<HostListView> {
       await ref.read(hostSyncServiceProvider)?.pushHost(saved);
     } catch (_) {/* offline / locked — reconciled on next sync */}
     messenger.showSnackBar(
-      SnackBar(content: Text('"${saved.label}" 를 내 목록으로 복사했습니다.')),
+      SnackBar(content: Text('Copied "${saved.label}" to your hosts.')),
     );
   }
 
-  String _groupOf(Host h) =>
-      (h.groupName?.isNotEmpty ?? false) ? h.groupName! : kDefaultGroup;
+  String _groupOf(Host h) => displayGroup(h.groupName);
 
   Map<String, List<Host>> _grouped(List<Host> hosts) {
     final q = _query.trim().toLowerCase();
@@ -251,7 +250,7 @@ class _HostListViewState extends ConsumerState<HostListView> {
 }
 
 /// A pending share invitation shown as a message at the top of the host list.
-/// The host is NOT in the list until the user taps "수신" (accept).
+/// The host is NOT in the list until the user taps Accept.
 class _InvitationCard extends StatelessWidget {
   const _InvitationCard({
     required this.invite,
@@ -281,7 +280,7 @@ class _InvitationCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${invite.ownerEmail} 님이 호스트를 공유했습니다',
+                    '${invite.ownerEmail} shared a host with you',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: scheme.onSecondaryContainer,
@@ -304,9 +303,9 @@ class _InvitationCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton(onPressed: onDecline, child: const Text('거절')),
+                TextButton(onPressed: onDecline, child: const Text('Decline')),
                 const SizedBox(width: 4),
-                FilledButton(onPressed: onAccept, child: const Text('수신')),
+                FilledButton(onPressed: onAccept, child: const Text('Accept')),
               ],
             ),
           ],
@@ -330,7 +329,7 @@ class _OwnerMark extends StatelessWidget {
       children: [
         Icon(Icons.verified_user_outlined, size: 13, color: color),
         const SizedBox(width: 3),
-        Text('소유자', style: TextStyle(fontSize: 10.5, color: color)),
+        Text('Owner', style: TextStyle(fontSize: 10.5, color: color)),
       ],
     );
   }
@@ -404,7 +403,7 @@ class _GroupHeader extends StatelessWidget {
             ),
             if (onShareGroup != null)
               IconButton(
-                tooltip: '그룹 공유',
+                tooltip: 'Share group',
                 icon: const Icon(Icons.ios_share, size: 18),
                 visualDensity: VisualDensity.compact,
                 onPressed: onShareGroup,
@@ -457,14 +456,14 @@ class _HostTile extends StatelessWidget {
             const SizedBox(width: 8),
             _ShareChip(
               icon: Icons.people_alt_outlined,
-              label: '공유받음 · ${share!.ownerEmail ?? '동료'}',
+              label: 'Shared by ${share!.ownerEmail ?? 'a colleague'}',
             ),
           ] else if (signedIn) ...[
             const SizedBox(width: 8),
             const _OwnerMark(),
             if (share?.sharedOut ?? false) ...[
               const SizedBox(width: 6),
-              const _ShareChip(icon: Icons.ios_share, label: '공유함'),
+              const _ShareChip(icon: Icons.ios_share, label: 'Shared'),
             ],
           ],
         ],
@@ -486,7 +485,7 @@ class _HostTile extends StatelessWidget {
           }
         },
         itemBuilder: (context) => sharedIn
-            ? const [PopupMenuItem(value: 'copy', child: Text('내 목록으로 복사'))]
+            ? const [PopupMenuItem(value: 'copy', child: Text('Copy to my hosts'))]
             : const [
                 PopupMenuItem(value: 'edit', child: Text('Edit')),
                 PopupMenuItem(value: 'share', child: Text('Share…')),

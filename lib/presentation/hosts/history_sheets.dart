@@ -6,10 +6,10 @@ import '../../data/remote/host_sync_service.dart';
 import '../../domain/entities/host.dart';
 
 String _opLabel(String op) => switch (op) {
-  'create' => '생성',
-  'update' => '수정',
-  'delete' => '삭제',
-  'rollback' => '롤백',
+  'create' => 'Created',
+  'update' => 'Updated',
+  'delete' => 'Deleted',
+  'rollback' => 'Rolled back',
   _ => op,
 };
 
@@ -69,7 +69,7 @@ class _HistorySheetState extends ConsumerState<_HistorySheet> {
       await sync.rollbackTo(widget.host.id, v.version);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('버전 ${v.version}로 되돌렸습니다.')),
+          SnackBar(content: Text('Rolled back to version ${v.version}.')),
         );
       }
       await _load();
@@ -91,7 +91,7 @@ class _HistorySheetState extends ConsumerState<_HistorySheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('"${widget.host.label}" 변경 이력',
+          Text('"${widget.host.label}" history',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           if (_loading)
@@ -100,7 +100,10 @@ class _HistorySheetState extends ConsumerState<_HistorySheet> {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (_items.isEmpty)
-            const Text('이력이 없습니다. (로그인·잠금 해제 후 동기화된 호스트만 이력이 쌓입니다.)')
+            const Text(
+              'No history yet. History is recorded only for hosts synced '
+              'while signed in and unlocked.',
+            )
           else
             ConstrainedBox(
               constraints: BoxConstraints(
@@ -134,7 +137,7 @@ class _HistorySheetState extends ConsumerState<_HistorySheet> {
                           : v.hasSnapshot
                               ? TextButton(
                                   onPressed: () => _restore(v),
-                                  child: const Text('복원'),
+                                  child: const Text('Restore'),
                                 )
                               : null,
                     ),
@@ -211,7 +214,7 @@ class _TrashSheetState extends ConsumerState<_TrashSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('최근 삭제한 호스트',
+          Text('Recently deleted',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           if (_loading)
@@ -220,7 +223,7 @@ class _TrashSheetState extends ConsumerState<_TrashSheet> {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (_items.isEmpty)
-            const Text('삭제된 호스트가 없습니다.')
+            const Text('No deleted hosts.')
           else
             for (final h in _items)
               ListTile(
@@ -235,7 +238,7 @@ class _TrashSheetState extends ConsumerState<_TrashSheet> {
                       )
                     : TextButton(
                         onPressed: () => _restore(h),
-                        child: const Text('복원'),
+                        child: const Text('Restore'),
                       ),
               ),
         ],

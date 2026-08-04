@@ -118,7 +118,8 @@ class _ShareGroupSheetState extends ConsumerState<_ShareGroupSheet> {
       final colleague = await ident.findByEmail(email);
       if (colleague == null) {
         _setMessage(
-          '"$email" 로 가입된 Kerminal 계정이 없습니다. 이메일을 확인하세요.',
+          'No Kerminal account is registered for "$email". '
+          'Check the address.',
           isError: true,
         );
         return;
@@ -136,8 +137,8 @@ class _ShareGroupSheetState extends ConsumerState<_ShareGroupSheet> {
       await _load();
       if (mounted) {
         _setMessage(
-          '${colleague.email} 님을 "${widget.groupName}" 그룹의 '
-          '$ok개 호스트에 초대했습니다. 상대가 수신하면 목록에 추가됩니다.',
+          'Invited ${colleague.email} to $ok host(s) in '
+          '"${widget.groupName}". They appear in their list once accepted.',
         );
       }
     } catch (e) {
@@ -181,13 +182,13 @@ class _ShareGroupSheetState extends ConsumerState<_ShareGroupSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '그룹 공유 · "${widget.groupName}" ($n개 호스트)',
+            'Share group · "${widget.groupName}" ($n host(s))',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
           Text(
-            '이 그룹에서 내가 소유한 호스트 전체를 한 동료에게 한 번에 초대합니다. '
-            '상대가 "수신"을 누른 호스트만 상대 목록에 추가됩니다.',
+            'Invites one colleague to every host in this group that you own. '
+            'Only the hosts they accept are added to their list.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
@@ -200,7 +201,7 @@ class _ShareGroupSheetState extends ConsumerState<_ShareGroupSheet> {
             )
           else ...[
             if (_recipients.isEmpty)
-              const Text('아직 이 그룹 전체를 공유한 동료가 없습니다.')
+              const Text('No one has been invited to this group yet.')
             else
               for (final r in _recipients)
                 ListTile(
@@ -213,9 +214,11 @@ class _ShareGroupSheetState extends ConsumerState<_ShareGroupSheet> {
                         : Theme.of(context).colorScheme.tertiary,
                   ),
                   title: Text(r.identity.email),
-                  subtitle: Text(r.accepted ? '전체 수신함' : '초대함 · 수신 대기'),
+                  subtitle: Text(
+                    r.accepted ? 'Accepted all' : 'Invited · awaiting reply',
+                  ),
                   trailing: IconButton(
-                    tooltip: '그룹 공유 취소',
+                    tooltip: 'Stop sharing group',
                     icon: const Icon(Icons.close),
                     onPressed: _busy ? null : () => _unshare(r),
                   ),
@@ -229,14 +232,15 @@ class _ShareGroupSheetState extends ConsumerState<_ShareGroupSheet> {
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
-                      decoration: const InputDecoration(labelText: '동료 이메일'),
+                      decoration:
+                          const InputDecoration(labelText: 'Colleague email'),
                       onSubmitted: (_) => _share(),
                     ),
                   ),
                   const SizedBox(width: 12),
                   FilledButton(
                     onPressed: _busy ? null : _share,
-                    child: const Text('그룹 초대'),
+                    child: const Text('Invite'),
                   ),
                 ],
               ),

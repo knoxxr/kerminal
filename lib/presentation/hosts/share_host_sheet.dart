@@ -86,7 +86,8 @@ class _ShareHostSheetState extends ConsumerState<_ShareHostSheet> {
       if (colleague == null) {
         // Invalid invitee — tell the sharer clearly so they can fix the address.
         _setMessage(
-          '"$email" 로 가입된 Kerminal 계정이 없습니다. 이메일을 확인하세요.',
+          'No Kerminal account is registered for "$email". '
+          'Check the address.',
           isError: true,
         );
         return;
@@ -96,7 +97,10 @@ class _ShareHostSheetState extends ConsumerState<_ShareHostSheet> {
       final r = await sync.recipientsOf(widget.host.id);
       if (mounted) {
         setState(() => _recipients = r);
-        _setMessage('${colleague.email} 님을 초대했습니다. 상대가 수신하면 목록에 추가됩니다.');
+        _setMessage(
+          'Invited ${colleague.email}. The host appears in their list '
+          'once they accept.',
+        );
       }
     } catch (e) {
       if (mounted) _setMessage('$e', isError: true);
@@ -140,8 +144,9 @@ class _ShareHostSheetState extends ConsumerState<_ShareHostSheet> {
           ),
           const SizedBox(height: 4),
           Text(
-            '초대할 동료는 Kerminal 계정이 있어야 합니다. 초대를 보내면 상대에게 '
-            '메시지로 표시되고, 상대가 "수신"을 눌러야 자신의 목록에 추가됩니다.',
+            'The person you invite needs a Kerminal account. They see the '
+            'invitation as a message and must accept it before the host is '
+            'added to their list.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
@@ -152,7 +157,7 @@ class _ShareHostSheetState extends ConsumerState<_ShareHostSheet> {
             ))
           else ...[
             if (_recipients.isEmpty)
-              const Text('아직 아무에게도 공유하지 않았습니다.')
+              const Text('Not shared with anyone yet.')
             else
               for (final r in _recipients)
                 ListTile(
@@ -165,9 +170,10 @@ class _ShareHostSheetState extends ConsumerState<_ShareHostSheet> {
                         : Theme.of(context).colorScheme.tertiary,
                   ),
                   title: Text(r.identity.email),
-                  subtitle: Text(r.accepted ? '수신함' : '초대함 · 수신 대기'),
+                  subtitle:
+                      Text(r.accepted ? 'Accepted' : 'Invited · awaiting reply'),
                   trailing: IconButton(
-                    tooltip: '공유 취소',
+                    tooltip: 'Stop sharing',
                     icon: const Icon(Icons.close),
                     onPressed: _busy ? null : () => _unshare(r),
                   ),
@@ -182,7 +188,7 @@ class _ShareHostSheetState extends ConsumerState<_ShareHostSheet> {
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
                       decoration: const InputDecoration(
-                        labelText: '동료 이메일',
+                        labelText: 'Colleague email',
                       ),
                       onSubmitted: (_) => _share(),
                     ),
@@ -190,7 +196,7 @@ class _ShareHostSheetState extends ConsumerState<_ShareHostSheet> {
                   const SizedBox(width: 12),
                   FilledButton(
                     onPressed: _busy ? null : _share,
-                    child: const Text('초대'),
+                    child: const Text('Invite'),
                   ),
                 ],
               ),

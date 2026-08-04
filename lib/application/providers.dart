@@ -106,7 +106,7 @@ final groupsProvider = Provider<List<String>>((ref) {
   final hosts = ref.watch(hostsProvider).asData?.value ?? const [];
   final groups = <String>{kDefaultGroup};
   for (final h in hosts) {
-    if (h.groupName != null && h.groupName!.isNotEmpty) groups.add(h.groupName!);
+    groups.add(displayGroup(h.groupName));
   }
   return groups.toList()..sort();
 });

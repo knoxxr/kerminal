@@ -73,10 +73,10 @@ class SessionKeepAliveService : Service() {
             // IMPORTANCE_LOW: no sound, and it stays collapsed in the shade.
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "SSH 세션 유지",
+                "SSH sessions",
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "열린 SSH 세션의 연결을 유지하는 동안 표시됩니다."
+                description = "Shown while open SSH sessions are being kept connected."
                 setShowBadge(false)
             }
             manager.createNotificationChannel(channel)
@@ -101,9 +101,9 @@ class SessionKeepAliveService : Service() {
         }
 
         val text = if (sessions == 1) {
-            "세션 1개의 연결을 유지하고 있습니다"
+            "Keeping 1 session connected"
         } else {
-            "세션 ${sessions}개의 연결을 유지하고 있습니다"
+            "Keeping $sessions sessions connected"
         }
 
         return builder

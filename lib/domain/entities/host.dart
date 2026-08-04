@@ -1,7 +1,19 @@
 import 'package:equatable/equatable.dart';
 
 /// Group a host falls into when the user leaves the group field blank.
-const kDefaultGroup = '기본';
+const kDefaultGroup = 'Default';
+
+/// The default-group name written by versions with a Korean UI. It is stored in
+/// the database, so hosts saved back then still carry it; [displayGroup] folds
+/// it into [kDefaultGroup] instead of letting it show up as a second group.
+const kLegacyDefaultGroup = '기본';
+
+/// The group a host is listed under: its own name, or [kDefaultGroup] when it
+/// has none (or the legacy default).
+String displayGroup(String? groupName) {
+  final name = groupName?.trim() ?? '';
+  return (name.isEmpty || name == kLegacyDefaultGroup) ? kDefaultGroup : name;
+}
 
 /// Authentication method used to connect to a [Host].
 enum AuthMethod { password, sshKey }

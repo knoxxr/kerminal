@@ -3,6 +3,15 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.5.2]
+
+### Changed
+- **UI 전체를 영어로 통일** — 한국어와 영어가 섞여 있던 화면 문구를 모두 영어로
+  바꿨습니다. 호스트 공유·초대, 변경 이력, 최근 삭제, 백업 내보내기/가져오기, 탭
+  툴팁, 안드로이드 세션 유지 알림까지 포함합니다.
+- 기본 그룹 이름이 `기본` → **`Default`** 로 바뀝니다. 기존에 `기본` 그룹으로 저장된
+  호스트는 그룹이 둘로 갈라지지 않도록 `Default`로 함께 묶여 표시됩니다.
+
 ## [0.5.1]
 
 ### Added

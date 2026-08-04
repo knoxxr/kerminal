@@ -232,7 +232,7 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
                   focusNode: focusNode,
                   decoration: const InputDecoration(
                     labelText: 'Group (optional)',
-                    hintText: '비우면 "$kDefaultGroup" 그룹',
+                    hintText: 'Leave empty for "$kDefaultGroup"',
                     suffixIcon: Icon(Icons.arrow_drop_down),
                   ),
                   onFieldSubmitted: (_) => onFieldSubmitted(),
