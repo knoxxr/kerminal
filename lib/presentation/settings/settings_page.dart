@@ -123,8 +123,9 @@ class _BackupSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '호스트를 암호로 암호화한 파일로 내보내 Google Drive 등으로 공유하고, '
-          '같은 암호로 가져올 수 있습니다. 비밀번호·키도 포함됩니다.',
+          'Export your hosts to a passphrase-encrypted file you can keep or '
+          'move to another device, then import it with the same passphrase. '
+          'Passwords and private keys are included.',
         ),
         const SizedBox(height: 12),
         Row(
@@ -132,13 +133,13 @@ class _BackupSection extends ConsumerWidget {
             FilledButton.tonalIcon(
               onPressed: () => _export(context, ref),
               icon: const Icon(Icons.lock_outline),
-              label: const Text('암호화 내보내기'),
+              label: const Text('Encrypted export'),
             ),
             const SizedBox(width: 12),
             OutlinedButton.icon(
               onPressed: () => _import(context, ref),
               icon: const Icon(Icons.file_open_outlined),
-              label: const Text('가져오기'),
+              label: const Text('Import'),
             ),
           ],
         ),
@@ -168,10 +169,10 @@ class _BackupSection extends ConsumerWidget {
       );
       await file.saveTo(location.path);
       messenger.showSnackBar(SnackBar(
-        content: Text('내보냄: ${location.path}\nGoogle Drive에 올려 공유하세요.'),
+        content: Text('Exported to ${location.path}'),
       ));
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('내보내기 실패: $e')));
+      messenger.showSnackBar(SnackBar(content: Text('Export failed: $e')));
     }
   }
 
@@ -191,14 +192,16 @@ class _BackupSection extends ConsumerWidget {
       final count =
           await ref.read(hostServiceProvider).importEncrypted(content, passphrase);
       messenger.showSnackBar(
-        SnackBar(content: Text('$count개 호스트를 가져왔습니다.')),
+        SnackBar(content: Text('Imported $count host(s).')),
       );
     } on BackupDecryptException {
       messenger.showSnackBar(
-        const SnackBar(content: Text('암호가 틀리거나 손상된 파일입니다.')),
+        const SnackBar(
+          content: Text('Wrong passphrase, or the file is corrupted.'),
+        ),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('가져오기 실패: $e')));
+      messenger.showSnackBar(SnackBar(content: Text('Import failed: $e')));
     }
   }
 
@@ -212,7 +215,7 @@ class _BackupSection extends ConsumerWidget {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(confirm ? '백업 암호 설정' : '백업 암호 입력'),
+        title: Text(confirm ? 'Set backup passphrase' : 'Enter passphrase'),
         content: Form(
           key: formKey,
           child: Column(
@@ -222,16 +225,19 @@ class _BackupSection extends ConsumerWidget {
                 controller: pass,
                 obscureText: true,
                 autofocus: true,
-                decoration: const InputDecoration(labelText: '암호(passphrase)'),
-                validator: (v) =>
-                    (v == null || v.length < 4) ? '4자 이상' : null,
+                decoration: const InputDecoration(labelText: 'Passphrase'),
+                validator: (v) => (v == null || v.length < 4)
+                    ? 'At least 4 characters'
+                    : null,
               ),
               if (confirm)
                 TextFormField(
                   controller: pass2,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: '암호 확인'),
-                  validator: (v) => v != pass.text ? '암호가 일치하지 않습니다' : null,
+                  decoration:
+                      const InputDecoration(labelText: 'Confirm passphrase'),
+                  validator: (v) =>
+                      v != pass.text ? 'Passphrases do not match' : null,
                 ),
             ],
           ),
@@ -239,7 +245,7 @@ class _BackupSection extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
@@ -247,7 +253,7 @@ class _BackupSection extends ConsumerWidget {
                 Navigator.pop(context, pass.text);
               }
             },
-            child: const Text('확인'),
+            child: const Text('OK'),
           ),
         ],
       ),

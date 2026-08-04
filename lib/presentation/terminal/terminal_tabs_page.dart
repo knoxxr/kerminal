@@ -157,7 +157,7 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
         ),
         actions: [
           IconButton(
-            tooltip: '세션 목록',
+            tooltip: 'Sessions',
             icon: Badge(
               label: Text('${sessions.length}'),
               isLabelVisible: sessions.length > 1,
@@ -200,7 +200,7 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: _sidebarVisible ? '호스트 목록 숨기기' : '호스트 목록 보기',
+          tooltip: _sidebarVisible ? 'Hide host list' : 'Show host list',
           icon: Icon(_sidebarVisible ? Icons.menu_open : Icons.menu),
           onPressed: () => setState(() => _sidebarVisible = !_sidebarVisible),
         ),
@@ -452,7 +452,7 @@ class _Tab extends StatelessWidget {
             dense: true,
             contentPadding: EdgeInsets.zero,
             leading: Icon(Icons.close),
-            title: Text('닫기'),
+            title: Text('Close'),
           ),
         ),
       ],
@@ -525,7 +525,7 @@ class _Tab extends StatelessWidget {
                       minHeight: 28,
                     ),
                     visualDensity: VisualDensity.compact,
-                    tooltip: '닫기',
+                    tooltip: 'Close',
                     onPressed: onClose,
                   ),
                 ],
@@ -585,7 +585,7 @@ class _SessionTile extends StatelessWidget {
       ),
       subtitle: Text(target, overflow: TextOverflow.ellipsis),
       trailing: IconButton(
-        tooltip: '닫기',
+        tooltip: 'Close',
         icon: const Icon(Icons.close),
         onPressed: onClose,
       ),

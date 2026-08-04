@@ -256,7 +256,7 @@ class HostSyncService {
       if (h['deleted'] == true) continue;
       final id = h['id'] as String;
       final sealed = sealedFor[id];
-      String summary = '(호스트)';
+      String summary = '(host)';
       if (sealed != null) {
         try {
           final key = IdentityCrypto.unseal(
@@ -268,7 +268,7 @@ class HostSyncService {
       }
       result.add(HostInvitation(
         hostId: id,
-        ownerEmail: ownerEmail[h['owner_id'] as String] ?? '동료',
+        ownerEmail: ownerEmail[h['owner_id'] as String] ?? 'a colleague',
         summary: summary,
       ));
     }
