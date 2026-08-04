@@ -3,6 +3,23 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.5.3]
+
+### Changed
+- **Windows 코드사이닝 인증서를 `CN=Minary`로 재발급** — 사이드로딩 설치 대화상자와
+  파일 서명 정보에 남아 있던 마지막 `SMIC` 표기를 없앴습니다. 게시자가 이제 브랜드와
+  일치합니다(RSA-2048 / SHA-256, 2036년까지).
+
+  > **주의:** 게시자는 MSIX 패키지 신원의 일부라, `CN=SMIC`으로 서명된 기존 설치본은
+  > **in-place 업데이트가 되지 않습니다.** 제거 후 새 `kerminal-codesign.cer`을
+  > 신뢰하고 재설치해야 합니다. Windows는 Microsoft Store 전용으로 전환했으므로
+  > 영향 범위는 v0.4.8을 사이드로딩으로 설치한 사용자로 한정됩니다.
+
+### Added
+- **Windows sideload (MSIX) 워크플로** — 스크린샷 촬영·수동 테스트용으로 서명된
+  설치 가능한 msix를 만듭니다. 릴리스에는 첨부하지 않고 워크플로 아티팩트로만 둡니다
+  (Windows 정식 배포처는 Microsoft Store).
+
 ## [0.5.2]
 
 ### Changed
@@ -48,10 +65,9 @@ All notable changes to Kerminal are documented here. Format loosely follows
   > 보이지 않습니다. 업그레이드 전에 이전 버전에서 **설정 → 백업 내보내기**로
   > `.kerminal` 파일을 만들고, 새 버전에서 가져오기로 복원하세요.
 
-  > Windows 사이드로딩 설치의 **게시자 표기는 아직 "SMIC"** 입니다. 코드사이닝
-  > 인증서(`CN=SMIC`)를 교체하지 않았기 때문이며, 교체 절차와 그 영향은
-  > [DEPLOY.md](DEPLOY.md#windows-msix)에 정리했습니다. 스토어 배포본은 스토어가
-  > 서명하므로 해당되지 않습니다.
+  > Windows 사이드로딩 설치의 게시자 표기는 0.5.3에서 `Minary`로 바뀝니다
+  > (0.5.2까지는 코드사이닝 인증서가 `CN=SMIC`이라 "SMIC"로 보였습니다).
+  > 스토어 배포본은 스토어가 서명하므로 해당되지 않습니다.
 
 ### Added
 - **개인정보처리방침** [`PRIVACY.md`](PRIVACY.md) (한국어·영어) — 로컬 저장 항목,

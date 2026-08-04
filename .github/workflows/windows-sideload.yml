@@ -1,0 +1,86 @@
+name: Windows sideload (MSIX)
+
+# Builds a SIGNED, directly-installable Windows MSIX and leaves it as a workflow
+# artifact — it is deliberately NOT attached to a GitHub Release, because
+# Windows ships through the Microsoft Store (see release.yml / store-package.yml)
+# and a public download would undercut the paid Store listing. Artifacts require
+# a signed-in GitHub account to download and expire on their own.
+#
+# Use it for: screenshots and manual testing of the current build, or handing a
+# build to someone directly. For Store submissions use store-package.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'MSIX version X.Y.Z.B — leave empty to derive from pubspec'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build sideload MSIX
+    runs-on: windows-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: dart run build_runner build
+      - run: dart run flutter_launcher_icons
+
+      - name: Build signed MSIX
+        shell: pwsh
+        env:
+          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+          VERSION_INPUT: ${{ inputs.version }}
+        run: |
+          # Derive the 4-part version from pubspec (`version: X.Y.Z+B` ->
+          # `X.Y.Z.B`) unless one was given, so the package version increases
+          # every build and Windows updates in place instead of rejecting a
+          # same-version/different-content package (0x80073CFB).
+          if ($env:VERSION_INPUT) {
+            $msixVer = $env:VERSION_INPUT
+          } else {
+            $raw = (Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+            $parts = $raw -split '\+'
+            $build = if ($parts.Count -gt 1) { $parts[1] } else { '0' }
+            $msixVer = "$($parts[0]).$build"
+          }
+          Write-Host "MSIX version: $msixVer"
+          $defs = "--dart-define=SUPABASE_URL=$($env:SUPABASE_URL) --dart-define=SUPABASE_ANON_KEY=$($env:SUPABASE_ANON_KEY)"
+          if ($env:WINDOWS_CERT_BASE64) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64))
+            dart run msix:create --version $msixVer --windows-build-args "$defs" --certificate-path $pfx --certificate-password $env:WINDOWS_CERT_PASSWORD
+          } else {
+            Write-Host 'No signing secret; building with the msix test certificate.'
+            dart run msix:create --version $msixVer --windows-build-args "$defs"
+          }
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/windows/x64/runner/Release/*.msix dist/
+          # The public cert has to be trusted once before a self-signed package
+          # installs; ship it alongside so the build is usable on its own.
+          Copy-Item windows/kerminal-codesign.cer dist/ -ErrorAction SilentlyContinue
+          Get-ChildItem dist | Select-Object Name, Length
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kerminal-windows-sideload
+          path: dist/*
+          if-no-files-found: error

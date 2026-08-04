@@ -19,7 +19,7 @@ Kerminal의 Microsoft Store(파트너 센터) 제출 화면에 그대로 붙여�
 | msix_config 항목 | 사이드로딩 값(pubspec) | **스토어 제출 값** |
 |---|---|---|
 | `identity_name` | `kr.minary.kerminal` | **`minary.Kerminal`** |
-| `publisher` | `CN=SMIC` (자체 서명 인증서) | **`CN=C460CD23-2642-4BA2-A332-6F8ADBE54E1F`** |
+| `publisher` | `CN=Minary` (자체 서명 인증서) | **`CN=C460CD23-2642-4BA2-A332-6F8ADBE54E1F`** |
 | `publisher_display_name` | `minary` | **`minary`** — 대소문자까지 일치 (업로드에서 `SMIC` ≠ `minary` 오류로 확인) |
 
 스토어 값은 `store-package.yml` 워크플로의 기본 입력값으로 넣어 두었으므로 그대로
