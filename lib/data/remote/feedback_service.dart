@@ -40,8 +40,8 @@ class FeedbackService {
         'message': message,
         if (contact != null && contact.trim().isNotEmpty)
           'contact': contact.trim(),
-        if (platform != null) 'platform': platform,
-        if (appVersion != null) 'appVersion': appVersion,
+        'platform': ?platform,
+        'appVersion': ?appVersion,
       });
       final data = res.data;
       if (data is Map && data['error'] != null) {
