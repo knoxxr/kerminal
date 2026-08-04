@@ -26,10 +26,17 @@ dart run flutter_launcher_icons
 
 > **Windows는 Microsoft Store 전용으로 배포합니다.**
 > 태그 릴리스(`release.yml`)는 더 이상 msix/인증서를 만들지 않습니다 — Windows 빌드
-> 검증은 PR CI(`ci.yml`)가 계속 담당합니다. 스토어 제출본은 Actions의
-> **Store package (MSIX)** 워크플로로 만들고, 절차는
-> [STORE_SUBMISSION.md](STORE_SUBMISSION.md)를 따릅니다.
-> 아래 자체 서명·사이드로딩 내용은 **로컬 테스트용**으로만 남겨 둡니다.
+> 검증은 PR CI(`ci.yml`)가 계속 담당합니다.
+>
+> | 용도 | 워크플로 | 산출물 |
+> |---|---|---|
+> | 스토어 제출 | **Store package (MSIX)** (`store-package.yml`) | 서명 없음, 파트너 센터 identity, `X.Y.Z.0` |
+> | 스크린샷·수동 테스트·개별 전달 | **Windows sideload (MSIX)** (`windows-sideload.yml`) | 자체 서명(`CN=SMIC`) + `.cer`, 바로 설치 가능 |
+>
+> 사이드로딩 산출물은 **릴리스에 첨부하지 않습니다** — 공개 다운로드가 생기면 유료
+> 스토어 등록의 의미가 없어지므로, 로그인이 필요한 워크플로 아티팩트로만 둡니다.
+> 제출 절차는 [STORE_SUBMISSION.md](STORE_SUBMISSION.md) 참고.
+> 아래 수동 빌드 절차는 로컬 개발용입니다.
 
 빌드 환경: Windows + Visual Studio Build Tools + **C++ ATL 컴포넌트**.
 ```powershell
