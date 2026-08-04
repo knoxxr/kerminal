@@ -3,6 +3,19 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [0.6.0]
+
+### Added
+- **앱에서 바로 문의하기** — 설정 → **Support → Contact us** 에서 질문·버그 신고·요청을
+  보낼 수 있습니다. 회신받을 이메일은 선택 입력이고, 로그인하지 않아도 보낼 수 있습니다.
+  문의에는 메시지와 **플랫폼·앱 버전만** 함께 전송됩니다 — 호스트 목록·자격증명·터미널
+  출력은 전송되지 않습니다.
+  - 수신 주소는 앱에 들어 있지 않습니다. 서버(Supabase Edge Function)의 시크릿에만
+    두어, 앱을 분석해도 주소를 알 수 없습니다.
+  - 클라우드 자격증명 없이 빌드한 로컬 전용 버전에서는 이 기능 대신 GitHub Issues
+    링크가 표시됩니다.
+  - 배포·설정 절차는 [supabase/README.md](supabase/README.md#5-문의-기능-edge-function) 참고.
+
 ## [0.5.3]
 
 ### Changed

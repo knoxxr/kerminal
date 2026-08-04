@@ -1,0 +1,8 @@
+# Supabase CLI project config. Only the pieces Kerminal needs are set here;
+# everything else uses CLI defaults.
+
+[functions.send-feedback]
+# Anyone can send an inquiry, including users who never created an account, so
+# the function must accept requests without a user JWT. The anon key is still
+# required to reach it, and the function itself validates and length-caps input.
+verify_jwt = false

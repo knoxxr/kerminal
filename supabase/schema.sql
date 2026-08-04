@@ -279,3 +279,21 @@ begin
     end if;
   end loop;
 end $$;
+
+-- =============================================================================
+-- feedback — in-app inquiries (see supabase/functions/send-feedback).
+--
+-- Written exclusively by the send-feedback Edge Function using the service-role
+-- key, which bypasses RLS. RLS therefore stays enabled with NO policies: no
+-- client can read or write this table directly, so one user can never see
+-- another's message. Read them in the dashboard, or via the service role.
+-- =============================================================================
+create table if not exists public.feedback (
+  id          uuid primary key default gen_random_uuid(),
+  message     text not null,
+  contact     text,                     -- optional reply address the user typed
+  platform    text,                     -- e.g. "android", "windows"
+  app_version text,
+  created_at  timestamptz not null default now()
+);
+alter table public.feedback enable row level security;

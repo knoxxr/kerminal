@@ -10,8 +10,10 @@ import '../../application/account_providers.dart';
 import '../../application/providers.dart';
 import '../../application/settings.dart';
 import '../../data/crypto/backup_crypto.dart';
+import '../../data/remote/feedback_service.dart';
 import '../../application/update_providers.dart';
 import '../../application/update_service.dart';
+import 'contact_sheet.dart';
 
 /// App preferences: terminal theme mode and font size, persisted immediately.
 class SettingsPage extends ConsumerWidget {
@@ -105,8 +107,56 @@ class SettingsPage extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           const _BackupSection(),
+          const SizedBox(height: 28),
+          Text('Support', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          const _SupportSection(),
         ],
       ),
+    );
+  }
+}
+
+/// In-app inquiry form. Hidden in local-only builds: the message is relayed by a
+/// server-side function (which holds the destination address), so without cloud
+/// credentials there is nothing to send through.
+class _SupportSection extends ConsumerWidget {
+  const _SupportSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canSend = ref.watch(feedbackServiceProvider) != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          canSend
+              ? 'Send a question, bug report or request straight to the '
+                  'maintainer.'
+              : 'This build has no cloud connection, so in-app messages are '
+                  'unavailable. Please open an issue on GitHub instead.',
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            if (canSend)
+              FilledButton.tonalIcon(
+                onPressed: () => showContactSheet(context),
+                icon: const Icon(Icons.mail_outline),
+                label: const Text('Contact us'),
+              ),
+            if (canSend) const SizedBox(width: 12),
+            OutlinedButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse('https://github.com/knoxxr/kerminal/issues'),
+                mode: LaunchMode.externalApplication,
+              ),
+              icon: const Icon(Icons.bug_report_outlined),
+              label: const Text('GitHub Issues'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
