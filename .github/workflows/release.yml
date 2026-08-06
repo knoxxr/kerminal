@@ -54,6 +54,32 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # Sign release APK/AAB with the stable release key. Without this the build
+      # falls back to the debug keystore, which runners generate fresh each time —
+      # every release would carry a different signature and Android would refuse
+      # to update one build with the next (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
+      - if: matrix.target == 'android'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not set — refusing to ship a debug-signed release."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$GITHUB_WORKSPACE/android/kerminal-release.p12"
+          # storeFile must be absolute: build.gradle.kts resolves a relative path
+          # against android/app/, not android/. PKCS#12 uses one password for
+          # both the store and the key.
+          cat > android/key.properties <<EOF
+          storeFile=$GITHUB_WORKSPACE/android/kerminal-release.p12
+          storeType=PKCS12
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEYSTORE_PASSWORD
+          EOF
+
       - run: flutter pub get
       - run: dart run build_runner build
       # Regenerate per-platform launcher icons from assets/icon/app_icon.png so

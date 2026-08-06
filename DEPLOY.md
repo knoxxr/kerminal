@@ -140,7 +140,25 @@ flutter_distributor release --name linux --jobs linux-appimage
    flutter build apk --release         # 직접 배포용 .apk
    ```
 - **스토어:** Google Play Console 계정($25 1회), Play App Signing 권장.
-- CI에서는 `key.properties`와 `.jks`를 시크릿에서 생성해 주입합니다.
+- **릴리스 서명 (필수):** 릴리스 CI가 시크릿에서 `key.properties`와 키스토어를 만들어
+  주입합니다. 시크릿이 없으면 워크플로가 **의도적으로 실패**합니다 — 디버그 서명본이
+  릴리스로 나가는 것을 막기 위함입니다.
+
+  | 시크릿 | 내용 |
+  |---|---|
+  | `ANDROID_KEYSTORE_BASE64` | PKCS#12 키스토어(base64) |
+  | `ANDROID_KEYSTORE_PASSWORD` | 키스토어·키 비밀번호(PKCS#12는 동일) |
+  | `ANDROID_KEY_ALIAS` | 키 별칭 (`kerminal`) |
+
+  > ⚠️ **이 키를 잃으면 안 됩니다.** 안드로이드는 서명이 다른 APK로 덮어쓰기를
+  > 막으므로(`INSTALL_FAILED_UPDATE_INCOMPATIBLE`), 키가 바뀌면 모든 사용자가
+  > **앱을 제거하고 재설치**해야 하고 저장된 호스트를 잃습니다. Play Store에서는
+  > 업데이트 자체가 거부됩니다. 키스토어 파일과 비밀번호를 안전한 곳에 백업하세요.
+
+  > **2026-08-06 이전 릴리스 주의:** 그때까지의 APK는 시크릿이 없어 **디버그 키**로
+  > 서명됐고, 그 키는 빌드마다 달랐습니다. 그래서 구버전 위에 신버전을 설치할 수
+  > 없었습니다. 이번 릴리스 키로 전환하면서 **한 번은 제거 후 재설치**가 필요하며,
+  > 이후 업데이트는 정상 동작합니다.
 
 ## iOS (App Store)
 빌드 환경: macOS + Xcode + Apple Developer 계정.
