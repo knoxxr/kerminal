@@ -5,6 +5,12 @@
 # Create a keystore with:
 #   keytool -genkey -v -keystore kerminal-release.jks -keyalg RSA -keysize 2048 \
 #           -validity 10000 -alias kerminal
+#
+# storeFile MUST be absolute: app/build.gradle.kts resolves a relative path
+# against android/app/, not android/.
+#
+# Add storeType=PKCS12 when the keystore is a .p12 (what release CI injects);
+# a keytool-made .jks needs no storeType.
 storePassword=changeit
 keyPassword=changeit
 keyAlias=kerminal

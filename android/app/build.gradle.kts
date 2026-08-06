@@ -46,6 +46,10 @@ android {
                 keyPassword = keystoreProperties["keyPassword"] as String
                 storeFile = keystoreProperties["storeFile"]?.let { file(it) }
                 storePassword = keystoreProperties["storePassword"] as String
+                // The CI keystore is a PKCS#12 (.p12); a .jks made by keytool
+                // needs no storeType. Declaring it explicitly avoids relying on
+                // the JDK default, which differs between versions.
+                keystoreProperties["storeType"]?.let { storeType = it as String }
             }
         }
     }
@@ -54,9 +58,19 @@ android {
         release {
             // Use the real release key when key.properties is present, otherwise
             // fall back to debug signing so `flutter run --release` still works.
+            //
+            // The fallback must never reach users: a debug keystore is generated
+            // per machine, so two CI runs produce different signatures and
+            // Android refuses to update one build with the next
+            // (INSTALL_FAILED_UPDATE_INCOMPATIBLE). Release CI injects
+            // key.properties from secrets — see .github/workflows/release.yml.
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
+                logger.warn(
+                    "kerminal: no android/key.properties — signing the release " +
+                        "build with the DEBUG key. Do not distribute this APK."
+                )
                 signingConfigs.getByName("debug")
             }
             isMinifyEnabled = true
