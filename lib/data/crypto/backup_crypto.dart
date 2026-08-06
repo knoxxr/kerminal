@@ -11,6 +11,11 @@ import 'package:pointycastle/export.dart';
 /// describing JSON envelope (salt + nonce + ciphertext, all base64).
 class BackupCrypto {
   static const _iterations = 120000;
+
+  /// Upper bound for the iteration count read out of a backup file. The value
+  /// is attacker-controlled — a file claiming billions of rounds would hang the
+  /// app on open — so cap it instead of trusting it.
+  static const _maxIterations = 1000000;
   static const _keyLength = 32; // AES-256
   static const _saltLength = 16;
   static const _nonceLength = 12; // GCM standard
@@ -67,7 +72,17 @@ class BackupCrypto {
     final nonce = Uint8List.fromList(base64.decode(j['nonce'] as String));
     final ciphertext =
         Uint8List.fromList(base64.decode(j['ciphertext'] as String));
-    final iterations = (j['iterations'] as int?) ?? _iterations;
+    if (j['kdf'] != null && j['kdf'] != 'pbkdf2-hmac-sha256') {
+      throw FormatException('Unsupported key derivation: ${j['kdf']}');
+    }
+    if (j['cipher'] != null && j['cipher'] != 'aes-256-gcm') {
+      throw FormatException('Unsupported cipher: ${j['cipher']}');
+    }
+    final claimed = (j['iterations'] as int?) ?? _iterations;
+    if (claimed < 1 || claimed > _maxIterations) {
+      throw FormatException('Backup declares an unusable iteration count.');
+    }
+    final iterations = claimed;
     final key = _deriveKey(passphrase, salt, iterations);
 
     final cipher = GCMBlockCipher(AESEngine())

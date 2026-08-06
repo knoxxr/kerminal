@@ -164,8 +164,11 @@ class _HostListViewState extends ConsumerState<HostListView> {
     // Keep realtime sync alive while this list is shown.
     ref.watch(syncRealtimeProvider);
 
+    final syncStatus = ref.watch(syncStatusProvider);
+
     return Column(
       children: [
+        if (!syncStatus.isHealthy) _SyncWarning(status: syncStatus),
         for (final invite in invitations)
           _InvitationCard(
             invite: invite,
@@ -245,6 +248,43 @@ class _HostListViewState extends ConsumerState<HostListView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Sync trouble, shown above the list. Cloud sync used to fail silently — a
+/// permanently broken state looked exactly like being offline — so say what
+/// happened rather than letting servers quietly stop updating.
+class _SyncWarning extends StatelessWidget {
+  const _SyncWarning({required this.status});
+
+  final SyncStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final skipped = status.undecryptableCount;
+    final text = status.error != null
+        ? 'Sync is not working right now. Your servers on this device are '
+            'unaffected.'
+        : '$skipped server(s) could not be decrypted and were skipped. They '
+            'may have been encrypted with a different key.';
+    return Container(
+      width: double.infinity,
+      color: scheme.errorContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off, size: 18, color: scheme.onErrorContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(fontSize: 12.5, color: scheme.onErrorContainer),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

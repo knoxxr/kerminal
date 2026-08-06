@@ -42,6 +42,16 @@ class AccountException implements Exception {
   String toString() => message;
 }
 
+/// This account has no encryption key stored yet, so there is nothing a
+/// passphrase could unlock. Distinct from a wrong passphrase: the answer is to
+/// set one up ([AccountController.createEncryptionKey]), which the UI must warn
+/// about because it invalidates anything encrypted for a previous key.
+class MissingEncryptionKeyException implements Exception {
+  const MissingEncryptionKeyException();
+  @override
+  String toString() => 'This account has no encryption key yet.';
+}
+
 final authServiceProvider = Provider<AuthService?>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return client == null ? null : AuthService(client);
@@ -120,37 +130,19 @@ class AccountController extends AsyncNotifier<AccountState> {
     );
   }
 
-  /// Unlocks the identity with [passphrase]. If the account has no wrapped key
-  /// yet (provisioned on another client), it is created now. Throws on a wrong
-  /// passphrase.
+  /// Unlocks the identity with [passphrase]. Throws on a wrong passphrase, and
+  /// [MissingEncryptionKeyException] when this account has no encryption key
+  /// yet — see [createEncryptionKey].
   Future<void> unlock(String passphrase) async {
     final current = state.value;
     if (current is! AccountLocked) return;
 
     final wrapped = await _identity.fetchWrappedPrivateKey(current.userId);
-    if (wrapped == null) {
-      final kp = IdentityCrypto.generate();
-      await _identity.upsertProfile(
-        userId: current.userId,
-        email: current.email,
-        publicKey: kp.publicKey,
-      );
-      await _identity.saveWrappedPrivateKey(
-        current.userId,
-        IdentityCrypto.wrapPrivateKey(kp.privateKey, passphrase),
-      );
-      state = AsyncData(
-        AccountUnlocked(
-          AccountIdentity(
-            userId: current.userId,
-            email: current.email,
-            publicKey: kp.publicKey,
-            privateKey: kp.privateKey,
-          ),
-        ),
-      );
-      return;
-    }
+    // Generating a key here would accept *any* passphrase and overwrite the
+    // account's public key, permanently locking the user out of everything
+    // already synced or shared with them. Make it an explicit, warned-about
+    // choice instead.
+    if (wrapped == null) throw const MissingEncryptionKeyException();
 
     final privateKey = IdentityCrypto.unwrapPrivateKey(wrapped, passphrase);
     state = AsyncData(
@@ -160,6 +152,39 @@ class AccountController extends AsyncNotifier<AccountState> {
           email: current.email,
           publicKey: IdentityCrypto.publicKeyOf(privateKey),
           privateKey: privateKey,
+        ),
+      ),
+    );
+  }
+
+  /// Sets up this account's encryption key for the first time, wrapping it with
+  /// [passphrase].
+  ///
+  /// Only valid when the account genuinely has no key (a fresh account, or one
+  /// created before sync existed). It replaces the account's public key, so any
+  /// host previously encrypted for the old key — including hosts colleagues
+  /// shared — becomes unreadable. The UI must warn before calling this.
+  Future<void> createEncryptionKey(String passphrase) async {
+    final current = state.value;
+    if (current is! AccountLocked) return;
+
+    final kp = IdentityCrypto.generate();
+    await _identity.upsertProfile(
+      userId: current.userId,
+      email: current.email,
+      publicKey: kp.publicKey,
+    );
+    await _identity.saveWrappedPrivateKey(
+      current.userId,
+      IdentityCrypto.wrapPrivateKey(kp.privateKey, passphrase),
+    );
+    state = AsyncData(
+      AccountUnlocked(
+        AccountIdentity(
+          userId: current.userId,
+          email: current.email,
+          publicKey: kp.publicKey,
+          privateKey: kp.privateKey,
         ),
       ),
     );

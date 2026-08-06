@@ -18,8 +18,18 @@ class KnownHostsService {
   Map<String, String> _load() {
     final raw = _prefs.getString(_key);
     if (raw == null || raw.isEmpty) return {};
-    final decoded = jsonDecode(raw) as Map<String, dynamic>;
-    return decoded.map((k, v) => MapEntry(k, v as String));
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      return {
+        for (final e in decoded.entries)
+          if (e.value is String) e.key: e.value as String,
+      };
+    } catch (_) {
+      // Unreadable store: treat every host as unknown so the user is asked to
+      // confirm the fingerprint again. Throwing here would instead break the
+      // verifier and make connecting impossible.
+      return {};
+    }
   }
 
   Future<void> _save(Map<String, String> map) =>
