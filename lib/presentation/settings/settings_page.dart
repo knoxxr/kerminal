@@ -98,13 +98,12 @@ class SettingsPage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 28),
-          Text('About & Updates',
+          Text('Version & updates',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           const _UpdateSection(),
           const SizedBox(height: 28),
-          Text('Backup & Share',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text('Backup', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           const _BackupSection(),
           const SizedBox(height: 28),
@@ -173,9 +172,9 @@ class _BackupSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Export your hosts to a passphrase-encrypted file you can keep or '
-          'move to another device, then import it with the same passphrase. '
-          'Passwords and private keys are included.',
+          'Save all your servers to one file, protected by a passphrase you '
+          'choose. Passwords and SSH keys are included, so keep the file safe. '
+          'Use it to move to another device or to recover after reinstalling.',
         ),
         const SizedBox(height: 12),
         Row(
@@ -183,13 +182,13 @@ class _BackupSection extends ConsumerWidget {
             FilledButton.tonalIcon(
               onPressed: () => _export(context, ref),
               icon: const Icon(Icons.lock_outline),
-              label: const Text('Encrypted export'),
+              label: const Text('Save to file…'),
             ),
             const SizedBox(width: 12),
             OutlinedButton.icon(
               onPressed: () => _import(context, ref),
               icon: const Icon(Icons.file_open_outlined),
-              label: const Text('Import'),
+              label: const Text('Restore from file…'),
             ),
           ],
         ),

@@ -114,7 +114,7 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
                 );
               case SshConnectionStatus.closed:
                 return _ReconnectBanner(
-                  message: 'Session closed.',
+                  message: 'Disconnected.',
                   onReconnect: _reconnect,
                 );
               case SshConnectionStatus.idle:
@@ -218,7 +218,11 @@ class _ReconnectBanner extends StatelessWidget {
       leading: const Icon(Icons.info_outline),
       content: Text(message),
       actions: [
-        TextButton(onPressed: onReconnect, child: const Text('Reconnect')),
+        TextButton.icon(
+          onPressed: onReconnect,
+          icon: const Icon(Icons.refresh, size: 18),
+          label: const Text('Try again'),
+        ),
       ],
     );
   }

@@ -58,8 +58,12 @@ class _HostListViewState extends ConsumerState<HostListView> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete host?'),
-        content: Text('"${host.label}" and its stored secret will be removed.'),
+        title: Text('Delete "${host.label}"?'),
+        content: const Text(
+          'The saved password or SSH key is removed from this device too. '
+          'This cannot be undone from here — deleted servers can be restored '
+          'from the menu on the server list.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -178,7 +182,7 @@ class _HostListViewState extends ConsumerState<HostListView> {
             decoration: InputDecoration(
               isDense: true,
               prefixIcon: const Icon(Icons.search),
-              hintText: 'Search hosts',
+              hintText: 'Search by name, address or user',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
               ),
@@ -194,7 +198,7 @@ class _HostListViewState extends ConsumerState<HostListView> {
               if (list.isEmpty) return const _EmptyState();
               final grouped = _grouped(list);
               if (grouped.isEmpty) {
-                return const Center(child: Text('No hosts match your search.'));
+                return const Center(child: Text('Nothing matches your search.'));
               }
               return ListView(
                 children: [
@@ -446,6 +450,11 @@ class _HostTile extends StatelessWidget {
         : '${host.username}@${host.hostname}:${host.port}';
 
     final tile = ListTile(
+      // Tapping the row connects. It used to require a double-tap to avoid
+      // accidental connects, but nothing on screen said so — a single tap did
+      // nothing and the list looked broken. A stray connect just opens a tab the
+      // user can close, so discoverability wins.
+      onTap: onTap,
       leading: Icon(
         host.authMethod == AuthMethod.sshKey ? Icons.key : Icons.dns_outlined,
       ),
@@ -469,38 +478,106 @@ class _HostTile extends StatelessWidget {
         ],
       ),
       subtitle: Text(subtitle),
-      trailing: PopupMenuButton<String>(
-        onSelected: (v) {
-          switch (v) {
-            case 'edit':
-              onEdit();
-            case 'share':
-              onShare();
-            case 'copy':
-              onCopy();
-            case 'history':
-              onHistory();
-            default:
-              onDelete();
-          }
-        },
-        itemBuilder: (context) => sharedIn
-            ? const [PopupMenuItem(value: 'copy', child: Text('Copy to my hosts'))]
-            : const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'share', child: Text('Share…')),
-                PopupMenuItem(value: 'copy', child: Text('Duplicate')),
-                PopupMenuItem(value: 'history', child: Text('History')),
-                PopupMenuItem(value: 'delete', child: Text('Delete')),
-              ],
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // A visible Connect action, so the primary thing you can do with a
+          // host is obvious from the row itself instead of having to be guessed.
+          IconButton(
+            tooltip: 'Connect',
+            icon: const Icon(Icons.play_arrow),
+            // Compact so the row still fits the 300px terminal sidebar.
+            visualDensity: VisualDensity.compact,
+            onPressed: onTap,
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'More actions',
+            onSelected: (v) {
+              switch (v) {
+                case 'edit':
+                  onEdit();
+                case 'share':
+                  onShare();
+                case 'copy':
+                  onCopy();
+                case 'history':
+                  onHistory();
+                default:
+                  onDelete();
+              }
+            },
+            // Icons let the menu be scanned by shape rather than read word by
+            // word, and make the destructive entry stand out.
+            itemBuilder: (context) => sharedIn
+                ? const [
+                    PopupMenuItem(
+                      value: 'copy',
+                      child: _MenuRow(
+                        icon: Icons.copy_all_outlined,
+                        label: 'Copy to my hosts',
+                      ),
+                    ),
+                  ]
+                : [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: _MenuRow(icon: Icons.edit_outlined, label: 'Edit'),
+                    ),
+                    const PopupMenuItem(
+                      value: 'share',
+                      child: _MenuRow(
+                        icon: Icons.person_add_alt,
+                        label: 'Share with a colleague…',
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'copy',
+                      child: _MenuRow(
+                        icon: Icons.copy_all_outlined,
+                        label: 'Duplicate',
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'history',
+                      child: _MenuRow(
+                        icon: Icons.history,
+                        label: 'Change history',
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: _MenuRow(
+                        icon: Icons.delete_outline,
+                        label: 'Delete',
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+          ),
+        ],
       ),
     );
 
-    // Connect on double-click/double-tap only (avoids accidental connects from
-    // a single stray click).
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(onDoubleTap: onTap, child: tile),
+    return MouseRegion(cursor: SystemMouseCursors.click, child: tile);
+  }
+}
+
+/// Icon + label row for a popup menu entry, so entries read at a glance.
+class _MenuRow extends StatelessWidget {
+  const _MenuRow({required this.icon, required this.label, this.color});
+
+  final IconData icon;
+  final String label;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 12),
+        Text(label, style: TextStyle(color: color)),
+      ],
     );
   }
 }
@@ -510,30 +587,43 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        );
+    // Two ways in, and they are not interchangeable — say which is which
+    // instead of leaving the user to guess what "Quick Connect" means.
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.dns_outlined, size: 48),
-          const SizedBox(height: 12),
-          const Text('No saved hosts yet.'),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 12,
-            children: [
-              FilledButton.icon(
-                onPressed: () => context.pushNamed('newHost'),
-                icon: const Icon(Icons.add),
-                label: const Text('Add host'),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => context.pushNamed('connect'),
-                icon: const Icon(Icons.bolt),
-                label: const Text('Quick Connect'),
-              ),
-            ],
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.dns_outlined, size: 48),
+            const SizedBox(height: 12),
+            Text(
+              'No servers yet',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => context.pushNamed('newHost'),
+              icon: const Icon(Icons.add),
+              label: const Text('Add a server'),
+            ),
+            const SizedBox(height: 4),
+            Text('Save it once, connect with one tap',
+                style: subtle, textAlign: TextAlign.center),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: () => context.pushNamed('connect'),
+              icon: const Icon(Icons.bolt),
+              label: const Text('Connect without saving'),
+            ),
+            const SizedBox(height: 4),
+            Text('For a one-off session',
+                style: subtle, textAlign: TextAlign.center),
+          ],
+        ),
       ),
     );
   }

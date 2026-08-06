@@ -82,11 +82,16 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('No open sessions.'),
+              const Icon(Icons.terminal, size: 48),
               const SizedBox(height: 12),
-              FilledButton(
+              const Text('No open connections'),
+              const SizedBox(height: 20),
+              // Name the destination rather than the direction — "Back" says
+              // where you came from, not what you get.
+              FilledButton.icon(
                 onPressed: () => context.goNamed('hosts'),
-                child: const Text('Back to hosts'),
+                icon: const Icon(Icons.dns_outlined),
+                label: const Text('Choose a server'),
               ),
             ],
           ),

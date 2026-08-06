@@ -16,17 +16,12 @@ class HostListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hosts'),
+        title: const Text('Servers'),
         actions: [
           IconButton(
-            tooltip: 'Quick Connect',
+            tooltip: 'Connect without saving',
             icon: const Icon(Icons.bolt),
             onPressed: () => context.pushNamed('connect'),
-          ),
-          IconButton(
-            tooltip: 'Recently deleted',
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => showTrashSheet(context),
           ),
           IconButton(
             tooltip: 'Settings',
@@ -38,12 +33,37 @@ class HostListPage extends ConsumerWidget {
                 ),
             onPressed: () => context.pushNamed('settings'),
           ),
+          // "Recently deleted" used to be a bare trash icon in the bar, which
+          // reads as "delete something" — the opposite of what it does. In a
+          // labelled menu the wording carries the meaning, and tooltips are
+          // invisible on touch anyway.
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (v) {
+              if (v == 'trash') showTrashSheet(context);
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'trash',
+                child: Row(
+                  children: [
+                    Icon(Icons.restore_from_trash_outlined, size: 18),
+                    SizedBox(width: 12),
+                    Text('Restore a deleted server'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       body: const HostListView(navigateAfterConnect: true),
-      floatingActionButton: FloatingActionButton(
+      // Labelled rather than a bare "+": the main action on an empty-ish list
+      // should say what it adds.
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.pushNamed('newHost'),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Add server'),
       ),
     );
   }
