@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../application/update_providers.dart';
+import '../../data/ssh/ssh_config_reader.dart';
 import 'history_sheets.dart';
 import 'host_list_view.dart';
+import 'import_ssh_config_sheet.dart';
 
 /// Home screen: the saved-host list (search, groups, one-click connect).
 /// Connecting opens a terminal session and switches to the terminal workspace,
@@ -40,10 +42,28 @@ class HostListPage extends ConsumerWidget {
           PopupMenuButton<String>(
             tooltip: 'More',
             onSelected: (v) {
-              if (v == 'trash') showTrashSheet(context);
+              switch (v) {
+                case 'trash':
+                  showTrashSheet(context);
+                case 'import':
+                  showImportSshConfigSheet(context);
+              }
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
+            itemBuilder: (context) => [
+              // Only on desktop: phones have no accessible ~/.ssh, so the entry
+              // would lead to a dead end.
+              if (sshConfigImportSupported)
+                const PopupMenuItem(
+                  value: 'import',
+                  child: Row(
+                    children: [
+                      Icon(Icons.download_outlined, size: 18),
+                      SizedBox(width: 12),
+                      Text('Import from ~/.ssh/config'),
+                    ],
+                  ),
+                ),
+              const PopupMenuItem(
                 value: 'trash',
                 child: Row(
                   children: [
