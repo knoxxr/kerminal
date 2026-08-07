@@ -13,12 +13,17 @@ class TerminalSession {
     required this.request,
     required this.controller,
     this.verifyHostKey,
+    this.respondToPrompts,
   });
 
   final String id;
   final SshConnectionRequest request;
   final SshTerminalController controller;
   final HostKeyVerifier? verifyHostKey;
+
+  /// Answers keyboard-interactive challenges (2FA codes). Kept per session so a
+  /// reconnect can be re-authenticated the same way.
+  final SshUserInfoResponder? respondToPrompts;
 }
 
 /// Owns the set of open terminal sessions (tabs) for the whole app.
@@ -45,6 +50,7 @@ class SessionsController extends Notifier<List<TerminalSession>> {
   String open(
     SshConnectionRequest request, {
     HostKeyVerifier? verifyHostKey,
+    SshUserInfoResponder? respondToPrompts,
   }) {
     final id = _uuid.v4();
     final controller = SshTerminalController();
@@ -56,9 +62,14 @@ class SessionsController extends Notifier<List<TerminalSession>> {
         request: request,
         controller: controller,
         verifyHostKey: verifyHostKey,
+        respondToPrompts: respondToPrompts,
       ),
     ];
-    controller.connect(request, verifyHostKey: verifyHostKey);
+    controller.connect(
+      request,
+      verifyHostKey: verifyHostKey,
+      respondToPrompts: respondToPrompts,
+    );
     // Hold the process open (Android) so this socket survives an app switch.
     SessionKeepAlive.sync(state.length);
     return id;

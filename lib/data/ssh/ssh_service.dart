@@ -14,6 +14,29 @@ typedef HostKeyVerifier = Future<bool> Function(
   String fingerprint,
 );
 
+/// One thing the server is asking the user for during keyboard-interactive
+/// authentication — typically a one-time code.
+class SshPrompt {
+  const SshPrompt({required this.text, required this.echo});
+
+  /// The server's prompt, e.g. `Verification code: `.
+  final String text;
+
+  /// Whether the typed answer may be shown. False for passwords.
+  final bool echo;
+}
+
+/// Answers a server's keyboard-interactive challenge (2FA/OTP, expired
+/// password, …). Returns one answer per prompt in order, or null to give up.
+///
+/// Mirrors dartssh2's handler but in the app's own types, so presentation code
+/// can build the dialog without importing the SSH library.
+typedef SshUserInfoResponder = Future<List<String>?> Function(
+  String name,
+  String instruction,
+  List<SshPrompt> prompts,
+);
+
 /// A live SSH shell bound to an [xterm] [Terminal].
 ///
 /// [connect] establishes the transport, authenticates, opens a PTY-backed
@@ -33,6 +56,7 @@ class SshSession {
     required Terminal terminal,
     required SshConnectionRequest request,
     HostKeyVerifier? verifyHostKey,
+    SshUserInfoResponder? respondToPrompts,
     Duration timeout = const Duration(seconds: 15),
     // Mobile carriers and NAT gateways drop idle TCP flows within a minute or
     // so, which is exactly what happens while the app sits in the background.
@@ -67,6 +91,21 @@ class SshSession {
       onPasswordRequest: request.authKind == SshAuthKind.password
           ? () => request.password ?? ''
           : null,
+      // Servers that require a one-time code (or force a password change) use
+      // keyboard-interactive. Without a handler those servers simply cannot be
+      // reached — authentication fails with no way for the user to answer.
+      // The request/prompt types are not exported by dartssh2, so the
+      // parameter type comes from its handler typedef by inference.
+      onUserInfoRequest: respondToPrompts == null
+          ? null
+          : (req) => respondToPrompts(
+                req.name,
+                req.instruction,
+                [
+                  for (final p in req.prompts)
+                    SshPrompt(text: p.promptText, echo: p.echo),
+                ],
+              ),
     );
 
     try {

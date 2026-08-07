@@ -30,6 +30,7 @@ class SshTerminalController extends ChangeNotifier {
 
   SshConnectionRequest? _request;
   HostKeyVerifier? _verifyHostKey;
+  SshUserInfoResponder? _respondToPrompts;
 
   /// Bumped for every dial. Callbacks (notably `done`) captured by a superseded
   /// link compare against it so a stale teardown can't clobber the live one.
@@ -50,9 +51,11 @@ class SshTerminalController extends ChangeNotifier {
   Future<void> connect(
     SshConnectionRequest request, {
     HostKeyVerifier? verifyHostKey,
+    SshUserInfoResponder? respondToPrompts,
   }) {
     _request = request;
     _verifyHostKey = verifyHostKey;
+    _respondToPrompts = respondToPrompts;
     if (_status == SshConnectionStatus.connecting || isConnected) {
       return _inFlight ?? Future<void>.value();
     }
@@ -119,6 +122,7 @@ class SshTerminalController extends ChangeNotifier {
         terminal: terminal,
         request: request,
         verifyHostKey: _verifyHostKey,
+        respondToPrompts: _respondToPrompts,
       );
       if (_disposed || generation != _generation) {
         session.close();
