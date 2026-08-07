@@ -11,6 +11,7 @@ import '../hosts/host_list_view.dart';
 import 'host_key_prompt.dart';
 import 'session_palette.dart';
 import 'terminal_session_view.dart';
+import 'user_info_prompt.dart';
 
 /// Below this width the workspace switches to the phone layout: the host list
 /// becomes a drawer (a 300px sidebar would swallow the screen) and the tabs get
@@ -399,7 +400,11 @@ class _TerminalTabsPageState extends ConsumerState<TerminalTabsPage> {
   /// Opens another session to the same host as [s] (right-click "duplicate").
   void _duplicate(TerminalSession s) {
     final verifier = buildHostKeyVerifier(ref.read(knownHostsProvider));
-    ref.read(sessionsProvider.notifier).open(s.request, verifyHostKey: verifier);
+    ref.read(sessionsProvider.notifier).open(
+          s.request,
+          verifyHostKey: verifier,
+          respondToPrompts: s.respondToPrompts ?? buildUserInfoResponder(),
+        );
     _select(ref.read(sessionsProvider).length - 1);
   }
 
