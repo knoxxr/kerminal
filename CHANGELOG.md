@@ -5,6 +5,13 @@ All notable changes to Kerminal are documented here. Format loosely follows
 
 ## [0.6.1]
 
+### Added
+- **터미널 색 테마 선택** — Kerminal(기존), Dracula, Solarized Dark/Light,
+  Gruvbox Dark, Nord 중에서 고를 수 있습니다. 설정 → Terminal에서 각 테마가
+  **실제 색으로 렌더된 프롬프트 미리보기**와 함께 표시되므로, 이름만 보고 고르지
+  않아도 됩니다. 글꼴 크기도 이 미리보기에 반영됩니다.
+  - 기존 사용자는 직접 바꾸기 전까지 지금과 동일한 색을 봅니다.
+
 ### Fixed
 - **동기화가 조용히 영구 정지되던 문제** — 클라우드 호스트 중 **하나라도** 복호화에
   실패하면 그 회차 전체가 중단되어 나머지 호스트도 갱신되지 않았고, 오류는 "일시적
