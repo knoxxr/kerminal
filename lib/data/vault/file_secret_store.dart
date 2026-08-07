@@ -25,8 +25,8 @@ class FileSecretStore implements SecretStore {
 
   Map<String, String>? _cache;
   Uint8List? _key;
+  /// Set once by [_load]; [_persist] writes to it.
   File? _dataFile;
-  File? _keyFile;
 
   /// In-flight load, so concurrent callers share one initialization.
   ///
@@ -54,7 +54,6 @@ class FileSecretStore implements SecretStore {
     final dir = await getApplicationSupportDirectory();
     final keyFile = File(p.join(dir.path, 'vault.key'));
     final dataFile = File(p.join(dir.path, 'vault.enc'));
-    _keyFile = keyFile;
     _dataFile = dataFile;
 
     if (await keyFile.exists()) {
