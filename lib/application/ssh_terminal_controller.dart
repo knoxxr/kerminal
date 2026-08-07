@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:xterm/xterm.dart';
 
+import '../data/ssh/sftp_service.dart';
 import '../data/ssh/ssh_service.dart';
 import '../domain/entities/ssh_connection_request.dart';
 
@@ -45,6 +46,13 @@ class SshTerminalController extends ChangeNotifier {
   bool _probing = false;
 
   bool get isConnected => _status == SshConnectionStatus.connected;
+
+  /// Opens file transfer on the live connection, or null when not connected.
+  Future<SftpService?> openFiles() async {
+    final session = _session;
+    if (session == null || !isConnected) return null;
+    return session.openSftp();
+  }
 
   /// Opens the connection described by [request] and streams it into
   /// [terminal].

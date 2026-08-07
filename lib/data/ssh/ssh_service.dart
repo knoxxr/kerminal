@@ -4,6 +4,7 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:xterm/xterm.dart';
 
 import '../../domain/entities/ssh_connection_request.dart';
+import 'sftp_service.dart';
 
 /// Verifies a server's host key. Returns true to accept the connection.
 /// [fingerprint] is the OpenSSH `SHA256:...` fingerprint of the host key.
@@ -140,6 +141,12 @@ class SshSession {
   }
 
   bool get isClosed => _client.isClosed;
+
+  /// Opens an SFTP channel on this connection for file transfer.
+  ///
+  /// Reuses the authenticated session rather than dialling again, so the user is
+  /// not asked for credentials (or a 2FA code) a second time.
+  Future<SftpService> openSftp() async => SftpService(await _client.sftp());
 
   /// Round-trips a keep-alive to find out whether the link is *really* alive.
   ///
