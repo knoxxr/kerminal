@@ -49,9 +49,27 @@ function clean(value: unknown, max: number): string {
 /// one created automatically). Reading only the legacy name meant the client was
 /// built with `undefined`, so every insert ran unauthenticated and RLS — which
 /// has no policies on `feedback` by design — refused it.
+/// Names of the SUPABASE_* variables the runtime provides. Names only — logging
+/// a key value would leak it into the function logs.
+function supabaseEnvNames(): string[] {
+  try {
+    return Object.keys(Deno.env.toObject())
+      .filter((k) => k.startsWith('SUPABASE'))
+      .sort();
+  } catch (_) {
+    return [];
+  }
+}
+
+/// Which variable the key came from, for the failure log.
+let keySource = 'none';
+
 function resolveServiceKey(): string | null {
   const legacy = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (legacy) return legacy;
+  if (legacy) {
+    keySource = 'SUPABASE_SERVICE_ROLE_KEY';
+    return legacy;
+  }
 
   const raw = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (!raw) return null;
@@ -65,11 +83,17 @@ function resolveServiceKey(): string | null {
       ? [(parsed as Record<string, unknown>).default, ...Object.values(parsed)]
       : [parsed];
     for (const c of candidates) {
-      if (typeof c === 'string' && c.length > 0) return c;
+      if (typeof c === 'string' && c.length > 0) {
+        keySource = 'SUPABASE_SECRET_KEYS';
+        return c;
+      }
       if (typeof c === 'object' && c !== null) {
         for (const field of ['api_key', 'key', 'secret', 'value']) {
           const v = (c as Record<string, unknown>)[field];
-          if (typeof v === 'string' && v.length > 0) return v;
+          if (typeof v === 'string' && v.length > 0) {
+            keySource = `SUPABASE_SECRET_KEYS.${field}`;
+            return v;
+          }
         }
       }
     }
@@ -110,7 +134,8 @@ Deno.serve(async (req) => {
     console.error(
       'No service key in the environment: neither SUPABASE_SERVICE_ROLE_KEY ' +
         'nor SUPABASE_SECRET_KEYS is set. Without it the insert runs ' +
-        'unauthenticated and RLS (no policies on feedback) rejects it.',
+        'unauthenticated and RLS (no policies on feedback) rejects it. ' +
+        `Available SUPABASE_* names: ${supabaseEnvNames().join(', ') || '(none)'}`,
     );
     return json({ error: 'server is misconfigured' }, 500);
   }
@@ -123,8 +148,14 @@ Deno.serve(async (req) => {
   });
   if (insertError) {
     // Logged in full: the message alone ("could not store") does not say
-    // whether the table is missing, a column is wrong, or RLS refused it.
-    console.error('feedback insert failed', JSON.stringify(insertError));
+    // whether the table is missing, a column is wrong, or RLS refused it. The
+    // env var *names* narrow down which key was actually used — never the
+    // values.
+    console.error(
+      'feedback insert failed',
+      JSON.stringify(insertError),
+      `keyUsed=${keySource} SUPABASE_*: ${supabaseEnvNames().join(', ')}`,
+    );
   }
 
   // Nothing was kept anywhere — the only case worth asking the user to retry.
