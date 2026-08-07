@@ -8,11 +8,8 @@ import '../../application/sessions.dart';
 import '../../application/settings.dart';
 import '../../application/ssh_terminal_controller.dart';
 import '../../domain/entities/ssh_connection_request.dart';
-<<<<<<< HEAD
 import 'remote_files_sheet.dart';
-=======
 import 'terminal_palettes.dart';
->>>>>>> origin/main
 import 'terminal_toolbar.dart';
 
 /// On desktop/web, printable characters arrive as hardware key events; xterm's
