@@ -22,9 +22,15 @@ class TerminalPalette {
 
   final TerminalTheme theme;
 
+  /// The scheme used before palettes were selectable, and what an unknown id
+  /// resolves to. Declared separately because indexing a const list is not a
+  /// constant expression.
+  static const fallback =
+      TerminalPalette(id: 'default', name: 'Kerminal', theme: _kerminal);
+
   /// All palettes, in the order they appear in settings.
   static const all = <TerminalPalette>[
-    TerminalPalette(id: 'default', name: 'Kerminal', theme: _kerminal),
+    fallback,
     TerminalPalette(id: 'dracula', name: 'Dracula', theme: _dracula),
     TerminalPalette(
       id: 'solarized-dark',
@@ -39,8 +45,6 @@ class TerminalPalette {
     TerminalPalette(id: 'gruvbox-dark', name: 'Gruvbox Dark', theme: _gruvbox),
     TerminalPalette(id: 'nord', name: 'Nord', theme: _nord),
   ];
-
-  static const fallback = all[0];
 
   /// The palette stored under [id], or [fallback] when it is unknown (an older
   /// build, or a value from a newer one).
