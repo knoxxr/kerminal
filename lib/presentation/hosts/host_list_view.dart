@@ -9,6 +9,7 @@ import '../../application/sessions.dart';
 import '../../data/remote/host_sync_service.dart';
 import '../../domain/entities/host.dart';
 import '../terminal/host_key_prompt.dart';
+import '../terminal/user_info_prompt.dart';
 import 'history_sheets.dart';
 import 'share_group_sheet.dart';
 import 'share_host_sheet.dart';
@@ -43,7 +44,11 @@ class _HostListViewState extends ConsumerState<HostListView> {
     final verifier = buildHostKeyVerifier(ref.read(knownHostsProvider));
     try {
       final request = await ref.read(hostServiceProvider).buildRequest(host);
-      ref.read(sessionsProvider.notifier).open(request, verifyHostKey: verifier);
+      ref.read(sessionsProvider.notifier).open(
+            request,
+            verifyHostKey: verifier,
+            respondToPrompts: buildUserInfoResponder(),
+          );
       if (widget.navigateAfterConnect) {
         router.goNamed('terminal');
       } else {

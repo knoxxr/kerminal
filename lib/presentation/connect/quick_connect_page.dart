@@ -7,6 +7,7 @@ import '../../application/sessions.dart';
 import '../../core/os_user.dart';
 import '../../domain/entities/ssh_connection_request.dart';
 import '../terminal/host_key_prompt.dart';
+import '../terminal/user_info_prompt.dart';
 
 /// Ad-hoc connection form. Lets the user connect to a server without saving it
 /// first. Opens the connection as a new terminal tab.
@@ -69,6 +70,7 @@ class _QuickConnectPageState extends ConsumerState<QuickConnectPage> {
     ref.read(sessionsProvider.notifier).open(
           request,
           verifyHostKey: buildHostKeyVerifier(ref.read(knownHostsProvider)),
+          respondToPrompts: buildUserInfoResponder(),
         );
     context.goNamed('terminal');
   }
