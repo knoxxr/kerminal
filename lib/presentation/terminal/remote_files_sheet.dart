@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +33,7 @@ class _RemoteFilesPage extends StatefulWidget {
 
 class _RemoteFilesPageState extends State<_RemoteFilesPage> {
   /// Servers almost always land the user in their home directory, and '.' is
-  /// what SFTP resolves to it — better than guessing /home/<user>.
+  /// what SFTP resolves to it — better than guessing `/home/<user>`.
   String _path = '.';
   List<RemoteEntry>? _entries;
   String? _error;
@@ -150,7 +148,7 @@ class _RemoteFilesPageState extends State<_RemoteFilesPage> {
         ],
       ),
     );
-    if (ok != true) return;
+    if (ok != true || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
       await widget.sftp.delete(entry);
@@ -162,7 +160,7 @@ class _RemoteFilesPageState extends State<_RemoteFilesPage> {
 
   Future<void> _rename(RemoteEntry entry) async {
     final name = await _askName('Rename', initial: entry.name);
-    if (name == null || name == entry.name) return;
+    if (name == null || name == entry.name || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
       await widget.sftp.rename(entry.path, RemotePath.join(_path, name));
@@ -174,7 +172,7 @@ class _RemoteFilesPageState extends State<_RemoteFilesPage> {
 
   Future<void> _newFolder() async {
     final name = await _askName('New folder');
-    if (name == null) return;
+    if (name == null || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
       await widget.sftp.createDirectory(RemotePath.join(_path, name));
@@ -339,7 +337,7 @@ class _RemoteFilesPageState extends State<_RemoteFilesPage> {
   }
 
   static String _formatDate(DateTime d) {
-    final two = (int n) => n.toString().padLeft(2, '0');
+    String two(int n) => n.toString().padLeft(2, '0');
     return '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}';
   }
 }
