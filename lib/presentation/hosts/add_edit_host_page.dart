@@ -160,7 +160,17 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
         editing ? 'Leave blank to keep the saved secret' : null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(editing ? 'Edit Host' : 'Add Host')),
+      appBar: AppBar(
+        title: Text(editing ? 'Edit server' : 'Add server'),
+        // The private-key field can push the save button well below the fold,
+        // leaving no visible way to finish. Keep one in the bar as well.
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: Text(editing ? 'Save' : 'Add'),
+          ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -169,8 +179,9 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
             TextFormField(
               controller: _label,
               decoration: const InputDecoration(
-                labelText: 'Label',
-                hintText: 'Prod web',
+                labelText: 'Name',
+                hintText: 'Production web server',
+                helperText: 'Shown in your list — call it whatever you like',
               ),
               validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Required' : null,
@@ -183,8 +194,8 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
                   child: TextFormField(
                     controller: _host,
                     decoration: const InputDecoration(
-                      labelText: 'Host',
-                      hintText: 'example.com',
+                      labelText: 'Address',
+                      hintText: 'example.com or 192.168.0.10',
                     ),
                     autocorrect: false,
                     validator: (v) =>
@@ -309,7 +320,7 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
                 child: TextButton.icon(
                   onPressed: _generateKey,
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text('Generate Ed25519 key'),
+                  label: const Text('Create a new key for me'),
                 ),
               ),
               TextFormField(
@@ -348,7 +359,7 @@ class _AddEditHostPageState extends ConsumerState<AddEditHostPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save),
-              label: Text(editing ? 'Save changes' : 'Add host'),
+              label: Text(editing ? 'Save changes' : 'Add server'),
             ),
           ],
         ),

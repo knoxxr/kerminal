@@ -123,7 +123,10 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
         TextField(
           controller: _password,
           obscureText: true,
-          decoration: const InputDecoration(labelText: 'Password'),
+          decoration: const InputDecoration(
+            labelText: 'Account password',
+            helperText: 'For signing in',
+          ),
         ),
         if (_signUp) ...[
           const SizedBox(height: 12),
@@ -132,9 +135,10 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
             obscureText: true,
             decoration: const InputDecoration(
               labelText: 'Encryption passphrase',
-              helperText: 'Encrypts your data end-to-end. '
-                  'If you lose it, your synced data cannot be recovered.',
-              helperMaxLines: 3,
+              helperText: 'A second, separate secret that encrypts your servers '
+                  'on this device before they are uploaded. We never receive it, '
+                  'so if you lose it your synced servers cannot be recovered.',
+              helperMaxLines: 4,
             ),
           ),
         ],
@@ -237,10 +241,18 @@ class _UnlockViewState extends ConsumerState<_UnlockView> {
     return ListView(
       children: [
         Text('Signed in as ${widget.email}'),
+        const SizedBox(height: 8),
+        Text(
+          'Enter your encryption passphrase to decrypt your synced servers on '
+          'this device. This is the second secret you chose when signing up — '
+          'not your account password.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
         const SizedBox(height: 20),
         TextField(
           controller: _passphrase,
           obscureText: true,
+          autofocus: true,
           onSubmitted: (_) => _unlock(),
           decoration: const InputDecoration(labelText: 'Encryption passphrase'),
         ),
@@ -253,7 +265,7 @@ class _UnlockViewState extends ConsumerState<_UnlockView> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Unlock'),
+              : const Text('Decrypt my servers'),
         ),
         const SizedBox(height: 12),
         TextButton(
@@ -278,7 +290,7 @@ class _SignedInView extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.verified_user_outlined),
           title: Text(email),
-          subtitle: const Text('Signed in · encryption unlocked'),
+          subtitle: const Text('Signed in · servers decrypted on this device'),
         ),
         const SizedBox(height: 16),
         FilledButton.icon(

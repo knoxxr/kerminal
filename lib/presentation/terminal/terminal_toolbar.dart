@@ -13,16 +13,26 @@ class TerminalToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // `^C` style labels only mean something to people who already know them, so
+    // each key spells out what it does in its tooltip. The labels stay short —
+    // the row has to fit a phone — but read as keys, not as symbols.
     final buttons = <Widget>[
-      _btn('Esc', () => _key(TerminalKey.escape)),
-      _btn('Tab', () => _key(TerminalKey.tab)),
-      _btn('^C', () => _key(TerminalKey.keyC, ctrl: true)),
-      _btn('^D', () => _key(TerminalKey.keyD, ctrl: true)),
-      _btn('^L', () => _key(TerminalKey.keyL, ctrl: true)),
-      _iconBtn(Icons.keyboard_arrow_up, () => _key(TerminalKey.arrowUp)),
-      _iconBtn(Icons.keyboard_arrow_down, () => _key(TerminalKey.arrowDown)),
-      _iconBtn(Icons.keyboard_arrow_left, () => _key(TerminalKey.arrowLeft)),
-      _iconBtn(Icons.keyboard_arrow_right, () => _key(TerminalKey.arrowRight)),
+      _btn('Esc', 'Escape', () => _key(TerminalKey.escape)),
+      _btn('Tab', 'Tab — complete or indent', () => _key(TerminalKey.tab)),
+      _btn('Ctrl+C', 'Stop the running command',
+          () => _key(TerminalKey.keyC, ctrl: true)),
+      _btn('Ctrl+D', 'End of input — log out of the shell',
+          () => _key(TerminalKey.keyD, ctrl: true)),
+      _btn('Ctrl+L', 'Clear the screen',
+          () => _key(TerminalKey.keyL, ctrl: true)),
+      _iconBtn(Icons.keyboard_arrow_up, 'Up — previous command',
+          () => _key(TerminalKey.arrowUp)),
+      _iconBtn(Icons.keyboard_arrow_down, 'Down — next command',
+          () => _key(TerminalKey.arrowDown)),
+      _iconBtn(Icons.keyboard_arrow_left, 'Left',
+          () => _key(TerminalKey.arrowLeft)),
+      _iconBtn(Icons.keyboard_arrow_right, 'Right',
+          () => _key(TerminalKey.arrowRight)),
     ];
 
     return Material(
@@ -40,28 +50,35 @@ class TerminalToolbar extends StatelessWidget {
     );
   }
 
-  Widget _btn(String label, VoidCallback onTap) => _Chip(onTap: onTap, child: Text(label));
+  Widget _btn(String label, String tooltip, VoidCallback onTap) =>
+      _Chip(onTap: onTap, tooltip: tooltip, child: Text(label));
 
-  Widget _iconBtn(IconData icon, VoidCallback onTap) =>
-      _Chip(onTap: onTap, child: Icon(icon, size: 18));
+  Widget _iconBtn(IconData icon, String tooltip, VoidCallback onTap) =>
+      _Chip(onTap: onTap, tooltip: tooltip, child: Icon(icon, size: 18));
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.child, required this.onTap});
+  const _Chip({required this.child, required this.onTap, required this.tooltip});
 
   final Widget child;
   final VoidCallback onTap;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(40, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        visualDensity: VisualDensity.compact,
+    return Tooltip(
+      message: tooltip,
+      // Touch users never hover, so make a long-press reveal it too.
+      triggerMode: TooltipTriggerMode.longPress,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(40, 32),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          visualDensity: VisualDensity.compact,
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }
