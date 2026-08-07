@@ -45,7 +45,7 @@ class _ContactSheetState extends ConsumerState<_ContactSheet> {
     });
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await service.send(
+      final delivered = await service.send(
         message: _message.text,
         contact: _contact.text,
         platform: currentPlatformLabel(),
@@ -53,8 +53,18 @@ class _ContactSheetState extends ConsumerState<_ContactSheet> {
       );
       if (!mounted) return;
       Navigator.pop(context);
+      // Claiming "sent" when the server could not email it would be a lie the
+      // user only discovers by never getting a reply.
       messenger.showSnackBar(
-        const SnackBar(content: Text('Thanks — your message was sent.')),
+        SnackBar(
+          content: Text(
+            delivered
+                ? 'Thanks — your message was sent.'
+                : 'Your message was received, but email delivery is currently '
+                    'failing. If you get no reply, please open a GitHub issue.',
+          ),
+          duration: Duration(seconds: delivered ? 4 : 8),
+        ),
       );
     } on FeedbackException catch (e) {
       if (mounted) setState(() => _error = e.message);

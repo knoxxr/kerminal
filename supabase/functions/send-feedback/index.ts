@@ -81,13 +81,15 @@ Deno.serve(async (req) => {
     console.error('feedback insert failed', insertError);
   }
 
+  // Nothing was kept anywhere — the only case worth asking the user to retry.
+  if (insertError) return json({ error: 'could not store your message' }, 500);
+
   if (!to || !resendKey) {
-    // Misconfigured deployment. The message is already stored, so report
-    // success only if the insert worked — otherwise the user should retry.
-    console.error('FEEDBACK_TO or RESEND_API_KEY is not set');
-    return insertError
-      ? json({ error: 'not configured' }, 500)
-      : json({ ok: true, delivered: false });
+    console.error(
+      'FEEDBACK_TO or RESEND_API_KEY is not set — the message was stored but ' +
+        'nobody will be emailed about it.',
+    );
+    return json({ ok: true, delivered: false });
   }
 
   const lines = [
@@ -117,8 +119,11 @@ Deno.serve(async (req) => {
       }),
     });
     if (!res.ok) {
-      console.error('resend failed', res.status, await res.text());
-      // Stored but not mailed — still a success from the user's point of view.
+      const body = await res.text();
+      console.error('resend failed', res.status, body);
+      // 403 with the shared onboarding@resend.dev sender means Resend only
+      // allows delivery to the address that owns the Resend account — verify a
+      // domain and set FEEDBACK_FROM to it.
       return json({ ok: true, delivered: false });
     }
   } catch (e) {

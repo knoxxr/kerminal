@@ -57,8 +57,19 @@ supabase secrets set \
 ```
 
 - `FEEDBACK_TO` — 문의를 받을 주소. **이 값만 바꾸면 수신자가 바뀝니다.**
-- `FEEDBACK_FROM` — 보내는 주소. 자체 도메인을 Resend에 인증하기 전에는
-  `onboarding@resend.dev`를 그대로 쓸 수 있습니다(기본값).
+- `FEEDBACK_FROM` — 보내는 주소.
+
+  > ⚠️ **기본값 `onboarding@resend.dev`는 테스트 전용입니다.** Resend는 이 도메인에서
+  > **Resend 계정에 등록된 본인 이메일로만** 발송을 허용하고, 다른 주소로 보내면
+  > **403**으로 거부합니다. 즉 `FEEDBACK_TO`가 Resend 가입 주소와 다르면 문의 메일이
+  > 한 통도 오지 않습니다(앱에는 "접수됨"으로 표시되고 내용은 `feedback` 테이블에
+  > 남습니다).
+  >
+  > 해결: ① Resend 계정 이메일을 `FEEDBACK_TO`와 같게 맞추거나,
+  > ② [resend.com/domains](https://resend.com/domains)에서 보유 도메인을 인증하고
+  > `FEEDBACK_FROM`을 그 도메인 주소로 바꾸세요(권장 — 스팸 처리도 줄어듭니다).
+  >
+  > 발송 실패는 **Edge Functions → send-feedback → Logs** 에 사유가 찍힙니다.
 - 함수는 `verify_jwt = false`(`config.toml`)라 **로그인하지 않은 사용자도** 문의할 수
   있습니다. 익명 스팸을 막기 위해 길이 제한(메시지 5,000자)과 최소 길이 검증이
   들어 있습니다.

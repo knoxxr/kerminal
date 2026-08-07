@@ -3,6 +3,19 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [1.0.1]
+
+### Fixed
+- **문의를 보냈을 때 실제로 전달됐는지 정확히 알려줍니다** — 서버가 메일 발송에
+  실패해도 앱이 "전송했습니다"라고 표시해, 답을 못 받고 나서야 알 수 있었습니다.
+  이제 전달되지 않은 경우 **"접수됐지만 메일 전달이 실패하고 있다"** 고 알리고 GitHub
+  이슈를 안내합니다. 문의 내용 자체는 서버에 저장되므로 유실되지 않습니다.
+  - 서버 함수도 정리했습니다: 저장까지 실패한 경우에만 오류로 응답하고, 발송 설정이
+    빠졌을 때는 "전달 안 됨"으로 정직하게 보고합니다.
+  - `supabase/README.md`에 **Resend 기본 발신 주소의 함정**을 적었습니다 —
+    `onboarding@resend.dev`는 테스트 전용이라 **Resend 계정 본인 이메일로만** 발송되고,
+    다른 주소는 403으로 거부됩니다. 문의 메일이 오지 않는 가장 흔한 원인입니다.
+
 ## [1.0.0]
 
 ### Added
