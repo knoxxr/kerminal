@@ -8,6 +8,7 @@ import '../../application/sessions.dart';
 import '../../application/settings.dart';
 import '../../application/ssh_terminal_controller.dart';
 import '../../domain/entities/ssh_connection_request.dart';
+import 'terminal_palettes.dart';
 import 'terminal_toolbar.dart';
 
 /// On desktop/web, printable characters arrive as hardware key events; xterm's
@@ -96,6 +97,9 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
   @override
   Widget build(BuildContext context) {
     final fontSize = ref.watch(settingsProvider.select((s) => s.fontSize));
+    final palette = TerminalPalette.byId(
+      ref.watch(settingsProvider.select((s) => s.terminalPaletteId)),
+    );
 
     return Column(
       children: [
@@ -126,7 +130,9 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: TerminalThemes.defaultTheme.background,
+              // Must match the terminal's own background, or the inset padding
+              // below shows as a stripe in a different colour.
+              color: palette.theme.background,
               border: Border(
                 left: BorderSide(color: widget.accent, width: 3),
               ),
@@ -141,6 +147,7 @@ class _TerminalSessionViewState extends ConsumerState<TerminalSessionView> {
               focusNode: _focusNode,
               autofocus: true,
               hardwareKeyboardOnly: _useHardwareKeyboard,
+              theme: palette.theme,
               textStyle: TerminalStyle(fontSize: fontSize),
             ),
           ),

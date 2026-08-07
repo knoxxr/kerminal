@@ -13,6 +13,7 @@ import '../../data/crypto/backup_crypto.dart';
 import '../../data/remote/feedback_service.dart';
 import '../../application/update_providers.dart';
 import '../../application/update_service.dart';
+import '../terminal/terminal_palettes.dart';
 import 'contact_sheet.dart';
 
 /// App preferences: terminal theme mode and font size, persisted immediately.
@@ -80,22 +81,11 @@ class SettingsPage extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              r'$ echo "font preview"',
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: settings.fontSize,
-                color: Colors.greenAccent,
-              ),
-            ),
+          const SizedBox(height: 12),
+          _PalettePicker(
+            selectedId: settings.terminalPaletteId,
+            fontSize: settings.fontSize,
+            onSelected: controller.setTerminalPalette,
           ),
           const SizedBox(height: 28),
           Text('Version & updates',
@@ -111,6 +101,138 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: 8),
           const _SupportSection(),
         ],
+      ),
+    );
+  }
+}
+
+/// Terminal colour-scheme picker that renders each option in its own colours —
+/// a name like "Gruvbox" means nothing without seeing it, and the sample doubles
+/// as the font-size preview.
+class _PalettePicker extends StatelessWidget {
+  const _PalettePicker({
+    required this.selectedId,
+    required this.fontSize,
+    required this.onSelected,
+  });
+
+  final String selectedId;
+  final double fontSize;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Colours', style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 8),
+        for (final palette in TerminalPalette.all) ...[
+          _PaletteOption(
+            palette: palette,
+            selected: palette.id == selectedId,
+            fontSize: fontSize,
+            onTap: () => onSelected(palette.id),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+}
+
+class _PaletteOption extends StatelessWidget {
+  const _PaletteOption({
+    required this.palette,
+    required this.selected,
+    required this.fontSize,
+    required this.onTap,
+  });
+
+  final TerminalPalette palette;
+  final bool selected;
+  final double fontSize;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = palette.theme;
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.background,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? scheme.primary : Theme.of(context).dividerColor,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // A realistic prompt line, so the colours are judged the way
+                  // they will actually be seen.
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'user@host',
+                          style: TextStyle(color: theme.green),
+                        ),
+                        TextSpan(
+                          text: ':~\$ ',
+                          style: TextStyle(color: theme.foreground),
+                        ),
+                        TextSpan(
+                          text: 'git status',
+                          style: TextStyle(color: theme.brightBlue),
+                        ),
+                      ],
+                    ),
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: fontSize,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      for (final c in [
+                        theme.red,
+                        theme.yellow,
+                        theme.green,
+                        theme.cyan,
+                        theme.blue,
+                        theme.magenta,
+                      ])
+                        Container(width: 14, height: 8, color: c),
+                      const SizedBox(width: 8),
+                      Text(
+                        palette.name,
+                        style: TextStyle(
+                          color: theme.foreground,
+                          fontSize: 12,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (selected) Icon(Icons.check, size: 18, color: theme.green),
+          ],
+        ),
       ),
     );
   }
