@@ -297,3 +297,64 @@ create table if not exists public.feedback (
   created_at  timestamptz not null default now()
 );
 alter table public.feedback enable row level security;
+
+-- =============================================================================
+-- Email normalization (2026-08 fix).
+--
+-- Sharing looks a colleague up by exact email match, so a profile saved as
+-- `Foo@Example.com` was unreachable for anyone typing `foo@example.com` — the
+-- inviter only saw "no such account". The app now lowercases on both write and
+-- lookup; this fixes rows written before that.
+--
+-- The unique index enforces it going forward: two profiles that differ only in
+-- case would reintroduce the ambiguity.
+-- =============================================================================
+do $$
+begin
+  -- Only safe to fold case when it does not collide with an existing row.
+  update public.profiles p
+     set email = lower(p.email)
+   where p.email <> lower(p.email)
+     and not exists (
+       select 1 from public.profiles q
+        where q.id <> p.id and q.email = lower(p.email)
+     );
+end $$;
+
+create unique index if not exists profiles_email_lower_idx
+  on public.profiles (lower(email));
+
+-- =============================================================================
+-- host_versions: one row per (host, version).
+--
+-- The version number is assigned by the app as MAX(version)+1, so two devices
+-- saving at once could both pick the same number. `rollbackTo` then queries a
+-- single row for (host_id, version) and fails permanently once duplicates
+-- exist. Existing duplicates are renumbered — moved to free numbers rather than
+-- deleted, so no history is lost — and the index prevents new ones.
+-- =============================================================================
+do $$
+declare
+  r record;
+  next_version integer;
+begin
+  for r in
+    select id, host_id, version
+      from (
+        select id, host_id, version,
+               row_number() over (
+                 partition by host_id, version order by created_at, id
+               ) as rn
+          from public.host_versions
+      ) ranked
+     where rn > 1
+     order by host_id, version, id
+  loop
+    select coalesce(max(version), 0) + 1 into next_version
+      from public.host_versions where host_id = r.host_id;
+    update public.host_versions set version = next_version where id = r.id;
+  end loop;
+end $$;
+
+create unique index if not exists host_versions_host_version_key
+  on public.host_versions (host_id, version);

@@ -48,8 +48,18 @@ class HostService {
         ? (password?.isNotEmpty ?? false)
         : (privateKeyPem?.isNotEmpty ?? false);
 
-    if (hasNewSecret) {
+    // Switching method leaves the old secret behind otherwise: editing a
+    // password host to use a key, without pasting one, kept the password in the
+    // vault forever while the host tried to connect with an empty key.
+    final methodChanged =
+        existing != null && existing.authMethod != authMethod;
+
+    // Clearing and writing are separate: a method change with no new secret
+    // must still drop the old one, and there is nothing to write in that case.
+    if (hasNewSecret || methodChanged) {
       await _clearSecrets(credentialId);
+    }
+    if (hasNewSecret) {
       if (authMethod == AuthMethod.password) {
         await _vault.writeSecret(_pwKey(credentialId), password!);
       } else {

@@ -74,9 +74,13 @@ class SshSession {
       username: request.username,
       keepAliveInterval: keepAliveInterval,
       // dartssh2 passes (keyType, fingerprintBytes); the fingerprint is the
-      // OpenSSH "SHA256:..." string. Null verifier => trust on first use.
+      // OpenSSH "SHA256:..." string.
+      //
+      // With no verifier the connection is refused rather than trusting any
+      // key: every call site supplies one, and a future caller forgetting it
+      // should fail loudly instead of silently losing MITM protection.
       onVerifyHostKey: verifyHostKey == null
-          ? (type, fingerprint) => true
+          ? (type, fingerprint) => false
           : (type, fingerprint) => verifyHostKey(
                 request.host,
                 request.port,
