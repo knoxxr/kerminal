@@ -298,6 +298,14 @@ create table if not exists public.feedback (
 );
 alter table public.feedback enable row level security;
 
+-- The service role bypasses RLS but still needs a table-level GRANT. Creating
+-- this table by hand in the SQL editor does not always pick up the schema's
+-- default privileges, and the Edge Function then fails with
+-- `42501 permission denied for table feedback` — which looks like an RLS problem
+-- but is not. anon/authenticated are deliberately left with no privileges, so
+-- no client can read or write other people's messages.
+grant insert, select on public.feedback to service_role;
+
 -- =============================================================================
 -- Email normalization (2026-08 fix).
 --
