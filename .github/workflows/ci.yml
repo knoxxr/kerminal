@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches: [main]
+  # No branch filter: a PR targeting a feature branch (stacked work) would
+  # otherwise merge with no verification at all.
   pull_request:
-    branches: [main]
 
 jobs:
   analyze-and-test:

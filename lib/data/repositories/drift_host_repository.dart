@@ -16,7 +16,12 @@ class DriftHostRepository implements HostRepository {
         hostname: row.hostname,
         port: row.port,
         username: row.username,
-        authMethod: AuthMethod.values[row.authMethod],
+        // Stored as an index, so a value written by a newer build (or a corrupt
+        // row) would throw RangeError and take the whole host list down.
+        authMethod: row.authMethod >= 0 &&
+                row.authMethod < AuthMethod.values.length
+            ? AuthMethod.values[row.authMethod]
+            : AuthMethod.password,
         groupName: row.groupName,
         credentialId: row.credentialId,
       );

@@ -192,23 +192,38 @@ class HostSyncService {
   }
 
   /// Appends an applied version snapshot for history/rollback.
+  ///
+  /// The number is MAX+1, which two devices saving at once can both pick. The
+  /// database rejects the duplicate (unique on host_id, version), so retry with
+  /// a freshly read number instead of leaving two rows that would break
+  /// [rollbackTo] forever. History is not worth failing a save over either, so
+  /// after the retries the operation is simply skipped.
   Future<void> _recordVersion(String hostId, String op, String? ciphertext) async {
-    final maxRow = await _client
-        .from('host_versions')
-        .select('version')
-        .eq('host_id', hostId)
-        .order('version', ascending: false)
-        .limit(1)
-        .maybeSingle();
-    final next = ((maxRow?['version'] as int?) ?? 0) + 1;
-    await _client.from('host_versions').insert({
-      'host_id': hostId,
-      'version': next,
-      'editor_id': _me,
-      'op': op,
-      'ciphertext': ciphertext,
-      'status': 'applied',
-    });
+    const attempts = 3;
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      final maxRow = await _client
+          .from('host_versions')
+          .select('version')
+          .eq('host_id', hostId)
+          .order('version', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      final next = ((maxRow?['version'] as int?) ?? 0) + 1;
+      try {
+        await _client.from('host_versions').insert({
+          'host_id': hostId,
+          'version': next,
+          'editor_id': _me,
+          'op': op,
+          'ciphertext': ciphertext,
+          'status': 'applied',
+        });
+        return;
+      } on PostgrestException catch (e) {
+        // 23505 = unique_violation: someone took this number first.
+        if (e.code != '23505' || attempt == attempts) return;
+      }
+    }
   }
 
   /// Invites [colleague] to a host I own by sealing its content key to their

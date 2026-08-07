@@ -25,6 +25,14 @@ class IdentityRepository {
 
   final SupabaseClient _client;
 
+  /// Normalizes an email for storage and lookup.
+  ///
+  /// Sharing looks colleagues up by exact match, so a profile stored as
+  /// `Foo@Example.com` could never be found by someone typing
+  /// `foo@example.com` — the inviter just saw "no such account". Both sides go
+  /// through this, at the single point where the value reaches the database.
+  static String normalizeEmail(String email) => email.trim().toLowerCase();
+
   /// Creates/updates the caller's public profile.
   Future<void> upsertProfile({
     required String userId,
@@ -33,7 +41,7 @@ class IdentityRepository {
   }) async {
     await _client.from('profiles').upsert({
       'id': userId,
-      'email': email,
+      'email': normalizeEmail(email),
       'public_key': base64.encode(publicKey),
     });
   }
@@ -62,7 +70,7 @@ class IdentityRepository {
     final row = await _client
         .from('profiles')
         .select('id, email, public_key')
-        .eq('email', email.trim().toLowerCase())
+        .eq('email', normalizeEmail(email))
         .maybeSingle();
     if (row == null) return null;
     return PublicIdentity(

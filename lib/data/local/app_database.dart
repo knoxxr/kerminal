@@ -33,4 +33,19 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 1;
+
+  /// Without a strategy, drift's default `onUpgrade` throws — so the first time
+  /// [schemaVersion] is raised, every existing install would fail to open its
+  /// database. Declared now, while there is nothing to migrate, so that adding a
+  /// column later is a one-line change instead of a broken release.
+  ///
+  /// When bumping [schemaVersion], add a `from`/`to` branch here (e.g.
+  /// `m.addColumn(hosts, hosts.newColumn)`) rather than relying on a rebuild.
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          // No migrations yet: v1 is the first schema.
+        },
+      );
 }
