@@ -78,6 +78,14 @@ supabase secrets set \
 > store your message)"가 뜹니다. 1단계(스키마 적용)를 건너뛰면 이 상태가 됩니다 —
 > `schema.sql`을 다시 실행하세요.
 
+> **`42501 permission denied for table feedback`가 나오면** `service_role`에 테이블
+> 권한이 없는 경우입니다. RLS 문제처럼 보이지만 아닙니다(service_role은 RLS를
+> 우회합니다). SQL Editor에서:
+> ```sql
+> grant insert, select on public.feedback to service_role;
+> ```
+> `schema.sql`에는 이 GRANT가 포함돼 있으니, 전체를 재실행하면 자동으로 적용됩니다.
+
 > **서비스 키 이름 주의:** 함수는 RLS를 우회하는 키가 필요합니다. 레거시 JWT 키를
 > 쓰는 프로젝트는 `SUPABASE_SERVICE_ROLE_KEY`(문자열), publishable/secret 키로
 > 옮긴 프로젝트는 `SUPABASE_SECRET_KEYS`(JSON)를 받습니다. 함수는 **양쪽 다**
