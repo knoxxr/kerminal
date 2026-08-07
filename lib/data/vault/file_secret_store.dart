@@ -17,50 +17,115 @@ SecretStore? macosSecretStore() =>
     defaultTargetPlatform == TargetPlatform.macOS ? FileSecretStore() : null;
 
 /// Secrets kept in an AES-256-GCM-encrypted file under the app-support
-/// directory. The key sits next to the data (both 0600-ish, app-private). This
-/// is weaker than the OS keychain but is the pragmatic option on macOS without
-/// an Apple Developer signing identity.
+/// directory, with the key in a sibling file. This is weaker than the OS
+/// keychain but is the pragmatic option on macOS without an Apple Developer
+/// signing identity.
 class FileSecretStore implements SecretStore {
   FileSecretStore();
 
   Map<String, String>? _cache;
   Uint8List? _key;
-  late final File _dataFile;
-  late final File _keyFile;
+  /// Set once by [_load]; [_persist] writes to it.
+  File? _dataFile;
+
+  /// In-flight load, so concurrent callers share one initialization.
+  ///
+  /// Without this, two overlapping calls could each decide the key file is
+  /// missing and generate one — the second overwriting the first, leaving the
+  /// already-written data undecryptable.
+  Future<void>? _loading;
+
+  /// Serializes writes so two concurrent [_persist] calls cannot interleave and
+  /// produce a truncated or mixed file.
+  Future<void> _writeQueue = Future<void>.value();
 
   Future<void> _ensureLoaded() async {
     if (_cache != null) return;
-    final dir = await getApplicationSupportDirectory();
-    _keyFile = File(p.join(dir.path, 'vault.key'));
-    _dataFile = File(p.join(dir.path, 'vault.enc'));
+    _loading ??= _load();
+    try {
+      await _loading;
+    } finally {
+      // A failed load must not be cached, or every later call fails with it.
+      if (_cache == null) _loading = null;
+    }
+  }
 
-    if (await _keyFile.exists()) {
-      _key = base64.decode((await _keyFile.readAsString()).trim());
+  Future<void> _load() async {
+    final dir = await getApplicationSupportDirectory();
+    final keyFile = File(p.join(dir.path, 'vault.key'));
+    final dataFile = File(p.join(dir.path, 'vault.enc'));
+    _dataFile = dataFile;
+
+    if (await keyFile.exists()) {
+      _key = base64.decode((await keyFile.readAsString()).trim());
     } else {
       _key = SymmetricCrypto.randomKey();
-      await _keyFile.writeAsString(base64.encode(_key!), flush: true);
+      await keyFile.writeAsString(base64.encode(_key!), flush: true);
+      await _restrictPermissions(keyFile);
     }
 
-    if (await _dataFile.exists()) {
-      try {
-        final plain = SymmetricCrypto.decrypt(
-          await _dataFile.readAsString(),
-          _key!,
-        );
-        _cache = (jsonDecode(plain) as Map).cast<String, String>();
-      } catch (_) {
-        _cache = <String, String>{};
-      }
-    } else {
+    if (!await dataFile.exists()) {
+      _cache = <String, String>{};
+      return;
+    }
+    try {
+      final plain = SymmetricCrypto.decrypt(
+        await dataFile.readAsString(),
+        _key!,
+      );
+      _cache = (jsonDecode(plain) as Map).cast<String, String>();
+    } catch (e) {
+      // The data is there but unreadable (key lost, file corrupt). Starting
+      // with an empty cache is the only way to keep working — but the next
+      // write would overwrite the file and destroy any chance of recovery, so
+      // move the original aside first.
+      final saved = await _preserveUnreadable(dataFile);
+      debugPrint(
+        'kerminal: could not decrypt the secret vault ($e). '
+        'The unreadable file was kept at ${saved?.path ?? 'its original path'}; '
+        'saved passwords and keys must be re-entered or restored from a backup.',
+      );
       _cache = <String, String>{};
     }
   }
 
-  Future<void> _persist() async {
-    await _dataFile.writeAsString(
-      SymmetricCrypto.encrypt(jsonEncode(_cache), _key!),
-      flush: true,
-    );
+  /// Renames an undecryptable vault to a free `vault.enc.unreadable-N` slot so
+  /// nothing is lost, and returns the new location.
+  Future<File?> _preserveUnreadable(File dataFile) async {
+    try {
+      for (var i = 0;; i++) {
+        final candidate = File('${dataFile.path}.unreadable${i == 0 ? '' : '-$i'}');
+        if (await candidate.exists()) continue;
+        return await dataFile.rename(candidate.path);
+      }
+    } catch (_) {
+      // Could not move it; leave the original in place rather than risk losing
+      // it. _persist below will overwrite, which is the pre-existing behavior.
+      return null;
+    }
+  }
+
+  /// Best-effort `chmod 600`. Dart cannot set a file mode directly, and these
+  /// files hold SSH private keys, so it is worth the one-off process spawn.
+  Future<void> _restrictPermissions(File file) async {
+    if (Platform.isWindows) return;
+    try {
+      await Process.run('chmod', ['600', file.path]);
+    } catch (_) {/* not fatal — the directory is already user-scoped */}
+  }
+
+  Future<void> _persist() {
+    final cache = Map<String, String>.from(_cache!);
+    final file = _dataFile!;
+    final key = _key!;
+    return _writeQueue = _writeQueue.then((_) async {
+      final created = !await file.exists();
+      await file.writeAsString(
+        SymmetricCrypto.encrypt(jsonEncode(cache), key),
+        flush: true,
+      );
+      if (created) await _restrictPermissions(file);
+    });
   }
 
   @override

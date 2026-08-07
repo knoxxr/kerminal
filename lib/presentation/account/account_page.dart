@@ -179,6 +179,10 @@ class _UnlockViewState extends ConsumerState<_UnlockView> {
       await ref
           .read(accountControllerProvider.notifier)
           .unlock(_passphrase.text);
+    } on MissingEncryptionKeyException {
+      // Not a wrong passphrase — there is nothing to unlock yet. Setting a key
+      // up is destructive for anything encrypted under a previous one, so ask.
+      if (mounted) await _offerToCreateKey();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -187,6 +191,44 @@ class _UnlockViewState extends ConsumerState<_UnlockView> {
       }
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _offerToCreateKey() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.key),
+        title: const Text('Set up encryption for this account?'),
+        content: const Text(
+          'This account has no encryption key yet, so there is nothing to '
+          'decrypt with a passphrase.\n\n'
+          'Creating one now uses the passphrase you just typed. If this account '
+          'previously had a key, anything already synced — including servers '
+          'colleagues shared with you — will no longer be readable.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Create key'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref
+          .read(accountControllerProvider.notifier)
+          .createEncryptionKey(_passphrase.text);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Could not set up: $e')));
+      }
     }
   }
 
@@ -248,17 +290,25 @@ class _SignedInView extends ConsumerWidget {
               const SnackBar(content: Text('Syncing…')),
             );
             try {
-              final info = await sync.reconcile();
-              ref.read(shareInfoProvider.notifier).set(info);
+              final result = await sync.reconcile();
+              ref.read(shareInfoProvider.notifier).set(result.shareInfo);
+              final skipped = result.undecryptableHostIds.length;
               messenger.showSnackBar(
-                const SnackBar(content: Text('Hosts synced.')),
+                SnackBar(
+                  content: Text(
+                    skipped == 0
+                        ? 'Servers synced.'
+                        : 'Servers synced — $skipped could not be decrypted '
+                            'and were skipped.',
+                  ),
+                ),
               );
             } catch (e) {
               messenger.showSnackBar(SnackBar(content: Text('Sync failed: $e')));
             }
           },
           icon: const Icon(Icons.sync),
-          label: const Text('Sync hosts now'),
+          label: const Text('Sync servers now'),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
