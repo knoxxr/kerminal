@@ -41,6 +41,44 @@ function clean(value: unknown, max: number): string {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
 
+/// The key that bypasses RLS, under either naming scheme.
+///
+/// Projects on the legacy JWT keys get `SUPABASE_SERVICE_ROLE_KEY` as a plain
+/// string. Projects migrated to publishable/secret keys instead get
+/// `SUPABASE_SECRET_KEYS`, a JSON value keyed by key name (`default` for the
+/// one created automatically). Reading only the legacy name meant the client was
+/// built with `undefined`, so every insert ran unauthenticated and RLS — which
+/// has no policies on `feedback` by design — refused it.
+function resolveServiceKey(): string | null {
+  const legacy = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (legacy) return legacy;
+
+  const raw = Deno.env.get('SUPABASE_SECRET_KEYS');
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    // Shape is not contractual, so accept the plausible ones rather than
+    // failing on a schema change.
+    const candidates: unknown[] = Array.isArray(parsed)
+      ? parsed
+      : typeof parsed === 'object' && parsed !== null
+      ? [(parsed as Record<string, unknown>).default, ...Object.values(parsed)]
+      : [parsed];
+    for (const c of candidates) {
+      if (typeof c === 'string' && c.length > 0) return c;
+      if (typeof c === 'object' && c !== null) {
+        for (const field of ['api_key', 'key', 'secret', 'value']) {
+          const v = (c as Record<string, unknown>)[field];
+          if (typeof v === 'string' && v.length > 0) return v;
+        }
+      }
+    }
+  } catch (e) {
+    console.error('could not parse SUPABASE_SECRET_KEYS', e);
+  }
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   if (req.method !== 'POST') return json({ error: 'method not allowed' }, 405);
@@ -67,10 +105,16 @@ Deno.serve(async (req) => {
   const from = Deno.env.get('FEEDBACK_FROM') ?? 'Kerminal <onboarding@resend.dev>';
 
   // Store first: a durable record even if the mail provider rejects the send.
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  const serviceKey = resolveServiceKey();
+  if (!serviceKey) {
+    console.error(
+      'No service key in the environment: neither SUPABASE_SERVICE_ROLE_KEY ' +
+        'nor SUPABASE_SECRET_KEYS is set. Without it the insert runs ' +
+        'unauthenticated and RLS (no policies on feedback) rejects it.',
+    );
+    return json({ error: 'server is misconfigured' }, 500);
+  }
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, serviceKey);
   const { error: insertError } = await supabase.from('feedback').insert({
     message,
     contact: contact || null,
@@ -78,7 +122,9 @@ Deno.serve(async (req) => {
     app_version: appVersion || null,
   });
   if (insertError) {
-    console.error('feedback insert failed', insertError);
+    // Logged in full: the message alone ("could not store") does not say
+    // whether the table is missing, a column is wrong, or RLS refused it.
+    console.error('feedback insert failed', JSON.stringify(insertError));
   }
 
   // Nothing was kept anywhere — the only case worth asking the user to retry.

@@ -74,6 +74,17 @@ supabase secrets set \
   있습니다. 익명 스팸을 막기 위해 길이 제한(메시지 5,000자)과 최소 길이 검증이
   들어 있습니다.
 
+> **`feedback` 테이블이 없으면** 앱에 "Could not send your message (could not
+> store your message)"가 뜹니다. 1단계(스키마 적용)를 건너뛰면 이 상태가 됩니다 —
+> `schema.sql`을 다시 실행하세요.
+
+> **서비스 키 이름 주의:** 함수는 RLS를 우회하는 키가 필요합니다. 레거시 JWT 키를
+> 쓰는 프로젝트는 `SUPABASE_SERVICE_ROLE_KEY`(문자열), publishable/secret 키로
+> 옮긴 프로젝트는 `SUPABASE_SECRET_KEYS`(JSON)를 받습니다. 함수는 **양쪽 다**
+> 읽으며, 둘 다 없으면 로그에 그 사실을 남기고 500으로 응답합니다(예전에는 인증 없이
+> 삽입을 시도해 RLS에 막히고, 원인이 드러나지 않았습니다). 이 값들은 Supabase가
+> 자동 주입하므로 직접 설정하지 않습니다.
+
 모든 문의는 `public.feedback` 테이블에도 저장됩니다. 메일 발송이 실패해도 내용이
 남으므로, 대시보드 **Table Editor → feedback** 에서 확인할 수 있습니다.
 이 테이블은 RLS가 켜져 있고 **정책이 없어** 클라이언트에서는 읽기·쓰기가 모두
