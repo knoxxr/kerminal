@@ -1,7 +1,7 @@
 # Microsoft Store 제출 자료 (파트너 센터 입력값)
 
 Kerminal의 Microsoft Store(파트너 센터) 제출 화면에 그대로 붙여넣을 수 있는 값들을
-화면 순서대로 정리한 문서입니다. 값은 `v0.4.9` (pubspec `0.4.9+33`) 기준.
+화면 순서대로 정리한 문서입니다. 값은 `v1.0.0` (pubspec `1.0.0+44`) 기준.
 
 > **먼저 읽기:** [§0 제출 전 필수 수정](#0-제출-전-필수-수정-현재-패키지는-거부됨) 두 가지를
 > 고치지 않으면 패키지 업로드 단계에서 바로 거부됩니다.
@@ -38,10 +38,10 @@ Kerminal의 Microsoft Store(파트너 센터) 제출 화면에 그대로 붙여�
 ### (2) 버전의 마지막 자리는 반드시 `0`
 
 스토어는 MSIX 버전의 **네 번째(리비전) 자리를 예약**하며 `0`이 아니면 거부합니다.
-릴리스 CI는 `X.Y.Z+B` → `X.Y.Z.B` (지금은 `0.5.0.34`)로 만들기 때문에
+릴리스 CI는 `X.Y.Z+B` → `X.Y.Z.B` (지금은 `1.0.0.44`)로 만들기 때문에
 **GitHub 릴리스에 붙는 msix는 스토어에 올릴 수 없습니다.**
 
-- 스토어용은 `--version 0.5.0.0`으로 따로 빌드하고, 다음 제출은 `0.5.1.0`처럼 앞 세 자리를 올립니다.
+- 스토어용은 `--version 1.0.0.0`으로 따로 빌드하고, 다음 제출은 `1.0.1.0`처럼 앞 세 자리를 올립니다.
 - 스토어 제출본은 서명하지 않습니다(스토어가 서명). `--store`를 쓰면
   `install_certificate`/자체 서명 인증서는 무시됩니다.
 
@@ -57,7 +57,7 @@ PublisherDisplayName을 로그에 출력**해 확인시켜 줍니다. 결과물�
 Windows PC에서 직접 만들 경우:
 
 ```powershell
-dart run msix:create --store --version 0.5.0.0 `
+dart run msix:create --store --version 1.0.0.0 `
   --identity-name "<파트너 센터 패키지/ID/이름>" `
   --publisher "<파트너 센터 패키지/ID/게시자>" `
   --publisher-display-name "minary" `
@@ -238,11 +238,13 @@ Windows · macOS · Linux · Android · iOS 동일 사용 경험
 ### 이 버전의 새로운 기능 (최대 1,500자)
 
 ```
-0.4.9
-- 모바일에서 탭이 하나만 보이고 전환되지 않던 문제 수정
-- 앱을 전환했다 돌아왔을 때 끊긴 SSH 연결을 스크롤백을 유지한 채 자동 재연결
-- 연결 완료 시 숨은 탭이 키보드 포커스를 가져가던 문제 수정
-- 유휴 연결이 NAT/서버에서 끊기지 않도록 20초 keep-alive 추가
+1.0.0
+- SFTP 파일 전송: 접속한 연결로 서버 파일을 탐색·업로드·다운로드
+- 2단계 인증(OTP) 서버 접속 지원
+- ~/.ssh/config 에서 서버 가져오기 (데스크톱)
+- 터미널 색 테마 6종 (Dracula, Solarized, Gruvbox, Nord 등)
+- 서버 목록에서 한 번 탭으로 접속, 인터페이스 전반 정리
+- 동기화·저장된 자격증명 관련 안정성 수정
 ```
 
 ### 검색어 (최대 7개 · 각 30자, 비공개)
@@ -351,11 +353,13 @@ encrypted backups and optional end-to-end encrypted sync.
 ### What's new in this version
 
 ```
-0.4.9
-- Fixed tabs being unreachable on phones (only one tab visible, no switching)
-- SSH sessions now reconnect automatically after an app switch, keeping scrollback
-- Fixed hidden tabs stealing keyboard focus when a connection came up
-- Added a 20-second keep-alive so idle links survive NAT and server timeouts
+1.0.0
+- SFTP file transfer: browse, upload and download over the same connection
+- Support for servers that require a one-time code (2FA)
+- Import servers from ~/.ssh/config (desktop)
+- Six terminal colour schemes (Dracula, Solarized, Gruvbox, Nord and more)
+- Connect with a single tap, plus a clearer interface throughout
+- Reliability fixes for sync and stored credentials
 ```
 
 ### Search terms
@@ -498,7 +502,7 @@ the user initiates plus the two HTTPS endpoints above.
 - [ ] `pubspec.yaml`의 `msix_config` 세 값 교체 (§0-1)
 - [ ] `PRIVACY.md`를 `main`에 푸시하고 URL 확인 (§8)
 - [ ] 스크린샷 최소 1장 (더미 데이터로) 촬영 (§7)
-- [ ] `dart run msix:create --store --version 0.4.9.0 ...` 로 패키지 생성 (§0-2)
+- [ ] `dart run msix:create --store --version 1.0.0.0 ...` 로 패키지 생성 (§0-2)
 - [ ] 가격/시장/속성/연령 등급 입력 (§2~4)
 - [ ] 등록 정보 ko-KR + en-US 입력 (§5, §6)
 - [ ] 인증 메모 붙여넣기 (§9)
