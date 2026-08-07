@@ -94,9 +94,11 @@ class SshSession {
       // Servers that require a one-time code (or force a password change) use
       // keyboard-interactive. Without a handler those servers simply cannot be
       // reached — authentication fails with no way for the user to answer.
+      // The request/prompt types are not exported by dartssh2, so the
+      // parameter type comes from its handler typedef by inference.
       onUserInfoRequest: respondToPrompts == null
           ? null
-          : (SSHUserInfoRequest req) => respondToPrompts(
+          : (req) => respondToPrompts(
                 req.name,
                 req.instruction,
                 [
