@@ -2,7 +2,8 @@
 
 Termius 유사 크로스플랫폼 SSH/터미널 클라이언트. Flutter 단일 코드베이스로 Windows / macOS / Linux / iOS / Android / Web을 지원합니다.
 
-개발 계획은 [PLAN.md](PLAN.md), 배포 절차는 [DEPLOY.md](DEPLOY.md)를 참고하세요.
+개발 계획은 [PLAN.md](PLAN.md), 배포 절차는 [DEPLOY.md](DEPLOY.md),
+릴리스 전 손으로 확인할 항목은 [docs/MANUAL_TESTS.md](docs/MANUAL_TESTS.md)를 참고하세요.
 
 ## 다운로드 / 배포
 
