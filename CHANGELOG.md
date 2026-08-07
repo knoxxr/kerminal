@@ -3,7 +3,7 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
-## [0.6.1]
+## [1.0.0]
 
 ### Added
 - **파일 전송(SFTP)** — 터미널 상단의 폴더 아이콘을 누르면 **접속된 그 연결로** 서버
