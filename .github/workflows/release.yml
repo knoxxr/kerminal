@@ -125,15 +125,24 @@ jobs:
           # Publish the public cert so users can trust it once before installing.
           Copy-Item windows/kerminal-codesign.cer dist/ -ErrorAction SilentlyContinue
 
-      # --- macOS: .app bundle (zip). DMG needs signing/notarization (see DEPLOY.md) ---
+      # --- macOS: .dmg with an /Applications shortcut ---
+      # A zip of the .app gave no way to *replace* an existing install: users
+      # unpacked it wherever the download landed and ended up with two copies.
+      # A disk image makes the drag-onto-Applications flow explicit, which is
+      # how macOS updates are normally applied.
       - if: matrix.target == 'macos'
         run: |
           flutter build macos --release \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
           mkdir -p dist
-          cd build/macos/Build/Products/Release
-          zip -r -y "$GITHUB_WORKSPACE/dist/kerminal-macos.zip" kerminal.app
+          staging="$(mktemp -d)"
+          cp -R build/macos/Build/Products/Release/kerminal.app "$staging/"
+          # The symlink is what turns the window into "drag here to install".
+          ln -s /Applications "$staging/Applications"
+          hdiutil create -volname Kerminal -srcfolder "$staging" \
+            -ov -format UDZO "$GITHUB_WORKSPACE/dist/kerminal-macos.dmg"
+          rm -rf "$staging"
 
       # --- Linux: bundle tarball ---
       - if: matrix.target == 'linux'
@@ -190,7 +199,7 @@ jobs:
             "notes": "Kerminal ${VERSION}. See the release page for details.",
             "downloads": {
               "windows": "${BASE}/kerminal.msix",
-              "macos": "${BASE}/kerminal-macos.zip",
+              "macos": "${BASE}/kerminal-macos.dmg",
               "linux": "${BASE}/kerminal-linux-x64.tar.gz",
               "android": "${BASE}/kerminal.apk"
             }
