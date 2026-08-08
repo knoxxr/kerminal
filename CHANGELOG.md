@@ -3,6 +3,19 @@
 All notable changes to Kerminal are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/); versions follow semver.
 
+## [1.0.3]
+
+### Changed
+- **macOS를 `.dmg`로 배포합니다** — 이전에는 `.app`을 담은 zip이라 압축을 푼 자리에
+  앱이 하나 더 생길 뿐, **기존 설치를 교체할 방법이 드러나지 않았습니다**(다운로드
+  폴더와 `/Applications`에 복사본이 각각 남고 어느 것이 최신인지 알 수 없었습니다).
+  이제 디스크 이미지를 열어 **Kerminal을 `Applications`로 드래그**하면 "바꾸기"를
+  묻는 익숙한 방식으로 갱신됩니다.
+  - 번들 ID가 같아 **저장된 서버와 자격증명은 이전에도 공유**되었습니다. 바뀐 것은
+    교체 방법이 명확해진 것입니다.
+  - 첫 실행 시 Gatekeeper 경고가 뜨면 **우클릭 → 열기**로 실행하세요(Apple 서명·공증
+    전이라 그렇습니다).
+
 ## [1.0.2]
 
 ### Fixed
